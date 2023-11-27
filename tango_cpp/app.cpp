@@ -11,6 +11,7 @@
 
 #include "libcpp-test.h"
 
+
 #define DEBUG
 
 #ifdef DEBUG
@@ -83,6 +84,102 @@ public:
     }
 };
 
+/*** ColorSensor*/
+class ColorSensor {
+public:
+/*** コンストラクタ*/
+    ColorSensor() {
+    }
+/** 反射光*/
+    void reflectValue() {
+        uint8_t value=ev3_color_sensor_get_reflect(color_sensor);
+        char data[10];
+        sprintf(data,"%d",value);
+
+        ev3_lcd_draw_string("reflectValue",0,86);
+        ev3_lcd_draw_string("reflectValue",0,96);
+    }
+/* RGB*/
+void RGBValue() {
+    rgb_raw_t rgb;
+    ev3_color_sensor_get_rgb_raw(color_sensor, &rgb);
+    char dataR[10];
+    char dataG[10];
+    char dataB[10];
+    sprintf(dataR, "%d", rgb.r);
+    sprintf(dataG, "%d", rgb.g);
+    sprintf(dataB, "%d", rgb.b);
+    ev3_lcd_draw_string("RGBValue.", 0, 36);
+    ev3_lcd_draw_string(dataR, 0, 46);
+    ev3_lcd_draw_string(dataG, 0, 56);
+    ev3_lcd_draw_string(dataB, 0, 66);
+}
+
+    int getBrightness() {
+        return ev3_color_sensor_get_reflect(color_sensor);
+    }
+};
+
+
+/**
+* LineTrace クラス
+*/
+
+class LineTrace {
+public:
+    int brightness;
+    int prevError;
+    int integral;
+    int forwardSpeed;
+    int target;
+
+    LineTrace() {
+        brightness = 0;
+        prevError = 0;
+        integral = 0;
+        target=17;
+        forwardSpeed=30;
+    }
+
+    void lineTraceAction(double Kp, double Kd) {
+        ColorSensor colorSensor; 
+        brightness = colorSensor.getBrightness(); 
+
+        int error = target - brightness;
+
+        // PD制御のパラメータ
+        //double Kp = 1.2; // 比例制御のゲイン
+        //double Kd = 0.8; // 微分制御のゲイン
+
+        // 偏差の変化量（微分）
+        int derivative = error - prevError;
+        prevError = error;
+
+        // 偏差の積分
+        integral += error;
+
+        // PD制御に基づいてモーターのパワーを計算
+        int power = static_cast<int>((Kp * error) + (Kd * derivative));
+
+        // モーター制御
+        if (power < -100) power = -100;
+        if (power > 100) power = +100;
+
+        ev3_motor_set_power(right_motor, forwardSpeed - power);
+        ev3_motor_set_power(left_motor, forwardSpeed + power);
+    }
+
+    private:
+    /**
+    * 属性
+    */
+    /**
+    * 関連
+    */
+    //ColorSensor colorSensor;
+    
+};
+
 /**
 * ObstacleDetection クラス
 */
@@ -113,10 +210,11 @@ public:
     }
 };
 
+
 /**
- * Tangoクラス
+ * Nyoroクラス
  */
-class TangoClass {
+class NyoroClass {
 public:
 
     /**
@@ -124,15 +222,16 @@ public:
     */
     enum RunState {
         STATE_STOP    = 0,
-        STATE_TURN    = 1,
+        STATE_LINE    = 1,
+        STATE_TURN    = 3,
         STATE_FORWARD = 2,
     };
 
     /**
     * コンストラクタ
     */
-    TangoClass() {
-        ev3_lcd_draw_string("Tango Class is created.", 0, 16);
+    NyoroClass() {
+        ev3_lcd_draw_string("Nyoro Class is created.", 0, 16);
 
         /* センサー入力ポートの設定 */
         ev3_sensor_config(sonar_sensor, ULTRASONIC_SENSOR);
@@ -145,7 +244,7 @@ public:
         ev3_motor_config(right_motor, LARGE_MOTOR);
 
         state = STATE_STOP;
-        turnSpeed = 20;
+        turnSpeed = 20;//20;
         forwardSpeed = 30;
     }
 
@@ -158,7 +257,7 @@ public:
     
         while(1) {
             if( runButton.isPressed() ) {
-                state = STATE_TURN;
+                state = STATE_LINE;
                 break;
             };
             
@@ -166,26 +265,28 @@ public:
         };
     }
 
-    /* 回転状態 */
-    void procTurnState() {
+    /* ライントレース */
+    void procLineState() {
         while(1) {
+            lineTrace.lineTraceAction(0.5,2.0);
             if( runButton.isPressed() ) {
                 state = STATE_STOP;
                 break;
             };
             
-            if( obstacleDetection.isDetected() == false ) {
-                state = STATE_FORWARD;
-                break;
-            };
+            //if( obstacleDetection.isDetected() == false ) {
+                //state = STATE_FORWARD;
+                //break;
+            //};
             
-            runControl.turn( turnSpeed );
+            //runControl.turn( turnSpeed );
             
             tslp_tsk(200 * 1000U); /* 200 msec周期起動 */
         };
         
         runControl.stop();
     }
+    
 
     /* 前進状態 */
     void procForwardState() {
@@ -214,9 +315,9 @@ public:
             if( state == STATE_STOP ) {
                 ev3_lcd_draw_string("Stop.", 0, 26);
                 procStopState();
-            } else if( state == STATE_TURN ) {
-                ev3_lcd_draw_string("Turn.", 0, 26);
-                procTurnState();
+            } else if( state == STATE_LINE ) {
+                ev3_lcd_draw_string("Line.", 0, 26);
+                procLineState();
             } else if( state == STATE_FORWARD ) {
                 ev3_lcd_draw_string("Forward.", 0, 26);
                 procForwardState();
@@ -239,16 +340,18 @@ private:
     /**
     * 関連
     */
+    LineTrace         lineTrace;
+    //ColorSensor       colorSensor;
     Button            runButton;          /* Buttonクラス */
     RunControl        runControl;         /* RunControlクラス */
     ObstacleDetection obstacleDetection;  /* ObstacleDetectionクラス */
 };
 
 
-/* Tangoオブジェクト生成 */
-TangoClass tango;
+/* Nyoroオブジェクト生成 */
+NyoroClass nyoro;
 
 void main_task(intptr_t unused) {
-    /* Tango start */
-    tango.start();
+    /* Nyoro start */
+    nyoro.start();
 }
