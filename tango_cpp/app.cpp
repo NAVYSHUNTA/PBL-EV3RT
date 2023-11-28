@@ -11,8 +11,6 @@
 
 #include "libcpp-test.h"
 
-#include <algorithm>
-using namespace std;
 
 #define DEBUG
 
@@ -21,12 +19,6 @@ using namespace std;
 #else
 #define _debug(x)
 #endif
-
-/**
- * 数値の代わりに変数名でモードを指定する
- */
-const int NORMAL_MODE = 0; // 通常モード
-const int RAPID_MODE  = 1; // 爆速モード
 
 /**
  * センサー、モーターの接続を定義します
@@ -39,15 +31,7 @@ static const sensor_port_t
 
 static const motor_port_t
     left_motor      = EV3_PORT_C,
-    right_motor     = EV3_PORT_B,
-    arm_moter       = EV3_PORT_A;
-
-/**
- * バックライトの色を指定する
- */
-static const ledcolor_t
-    green_light     = LED_GREEN,
-    orange_light    = LED_ORANGE;
+    right_motor     = EV3_PORT_B;
 
 
 
@@ -55,373 +39,319 @@ static const ledcolor_t
 * Button クラス
 */
 class Button {
-    public:
-        // コンストラクタ
-        Button() {
-        }
+public:
+    /**
+    * コンストラクタ
+    */
+    Button() {
+    }
 
-        // 操作
-        // 押下状態を取得する
-        bool isPressed() {
-            return ( ev3_touch_sensor_is_pressed( touch_sensor ) );
-        }
+    /**
+    * 操作
+    */
+    bool isPressed() {
+        return( ev3_touch_sensor_is_pressed( touch_sensor ) );
+    }
 };
 
 /**
- * Backlight クラス
- */
-class Backlight {
-    public:
-        // コンストラクタ
-        Backlight() {
-        }
-
-        // 操作
-        // 緑色に変更
-        void setGreenLED() {
-            ev3_led_set_color(green_light);
-        }
-
-        // オレンジ色に変更
-        void setOrangeLED() {
-            ev3_led_set_color(orange_light);
-        }
-};
-
-/**
- * SonarSensor クラス
- */
-class SonarSensor {
-    public:
-        // コンストラクタ
-        SonarSensor() {
-        }
-
-        // 操作
-        // 距離を取得する
-        int sonardetection() {
-            return ev3_ultrasonic_sensor_get_distance(sonar_sensor);
-        }
-};
-
-/**
- * HatChecker クラス
- */
-class HatCheckerClass {
-    public:
-        // コンストラクタ
-        HatCheckerClass() {
-        }
-
-        // 操作
-        // サンタ帽子の有無を判定する
-        bool hatChecker() {
-            if (sonarSensor.sonardetection() > hatCheckDistance) {
-                // 帽子がないとき
-                return false;
-            } else {
-                // 帽子があるとき
-                return true;
-            }
-        }
-    private:
-        // 属性
-        int hatCheckDistance = 5; // 被っているとみなす距離
-    // 関連
-    SonarSensor sonarSensor;
-};
-
-/**
- * ModeSelect クラス
- */
-class ModeSelectClass {
-    public:
-        // コンストラクタ
-        ModeSelectClass() {
-        }
-
-        // 操作
-        // 選択したモードを取得する
-        int getMode() {
-            // サンタ帽子の有無を判定する
-            if (!hatChecker.hatChecker()) {
-                // 帽子がないとき
-                backlight.setGreenLED(); // 緑色に変更
-                return NORMAL_MODE; // 通常モード
-            } else {
-                // 帽子があるとき
-                backlight.setOrangeLED(); // オレンジ色に変更
-                return RAPID_MODE; // 爆速モード
-            }
-        }
-
-        // タッチセンサが押されたことを確認する
-        bool isButtonPressed() {
-            return button.isPressed();
-        }
-    // 関連
-    HatCheckerClass hatChecker;
-    Backlight       backlight;
-    Button          button;
-};
-
-/**
- * ColorSensor クラス
- */
-class ColorSensor {
-    public:
-        // コンストラクタ
-        ColorSensor() {
-        }
-
-        // 操作
-        // 反射光
-        void reflectValue() {
-            uint8_t value=ev3_color_sensor_get_reflect(color_sensor);
-            char data[10];
-            sprintf(data,"%d",value);
-
-            ev3_lcd_draw_string("reflectValue.",0,36);
-            ev3_lcd_draw_string(data,0,46);
-        }
-
-        // RGB
-        void RGBValue() {
-            rgb_raw_t rgb;
-            ev3_color_sensor_get_rgb_raw(color_sensor,&rgb);
-            char dataR[10];
-            char dataG[10];
-            char dataB[10];
-            sprintf(dataR,"%d",rgb.r);
-            sprintf(dataG,"%d",rgb.g);
-            sprintf(dataB,"%d",rgb.b);
-
-            ev3_lcd_draw_string("RGBValue.",0,36);
-            ev3_lcd_draw_string(dataR,0,46);
-            ev3_lcd_draw_string(dataG,0,56);
-            ev3_lcd_draw_string(dataB,0,66);
-        }
-
-        // 輝度値を取得する
-        int getBrightness() {
-            return ev3_color_sensor_get_reflect(color_sensor);
-        }
-};
-
-/**
- * GiftDrop クラス
- */
-class GiftDrop {
-    public:
-        // コンストラクタ
-        GiftDrop() {
-        }
-
-        // 操作
-        // アームを2回上下運動させる
-        void dropAction() {
-            ; /* TODO */
-        }
-};
-
-/**
- * RunControl
- */
+* RunControl クラス
+*/
 class RunControl {
-    public:
-        // コンストラクタ
-        RunControl() {
-            distance = 0L;  // 走行距離
-        }
+public:
+    /**
+    * コンストラクタ
+    */
+    RunControl() {
+    }
 
-        // 操作
-        // 停止する
-        void stop() {
-            ev3_motor_stop(right_motor, true);
-            ev3_motor_stop(left_motor, true);
-        }
+    /**
+    * 操作
+    */
+    void stop() {
+        ev3_motor_stop(right_motor, true);
+        ev3_motor_stop(left_motor, true);
+    }
 
-        // 前進する
-        void forward(int leftSpeed, int rightSpeed) {
-            ev3_motor_set_power(right_motor, leftSpeed);
-            ev3_motor_set_power(left_motor, rightSpeed);
-        }
+    void turn(int speed) {
+        ev3_motor_set_power(right_motor, speed);
+        ev3_motor_set_power(left_motor, -speed);
+    }
 
-        // 回転する
-        void rotate(int degrees) {
-            /* TODO */
-            // ev3_motor_rotate(left_motor, degrees, speed_abs, true);
-            // ev3_motor_reset_counts(left_motor);
-        }
+    void forward(int speed) {
+        ev3_motor_set_power(right_motor, speed);
+        ev3_motor_set_power(left_motor,  speed);
+    }
+};
 
-        // 走行距離をリセットする
-        void resetDistance() {
-            distance = 0;
-        }
+/*** ColorSensor*/
+class ColorSensor {
+public:
+/*** コンストラクタ*/
+    ColorSensor() {
+    }
+/** 反射光*/
+    void reflectValue() {
+        uint8_t value=ev3_color_sensor_get_reflect(color_sensor);
+        char data[10];
+        sprintf(data,"%d",value);
 
-        // 走行距離をインクリメントする
-        void incDistance() {
-            distance++;
-        }
+        ev3_lcd_draw_string("reflectValue",0,86);
+        ev3_lcd_draw_string("reflectValue",0,96);
+    }
+/* RGB*/
+void RGBValue() {
+    rgb_raw_t rgb;
+    ev3_color_sensor_get_rgb_raw(color_sensor, &rgb);
+    char dataR[10];
+    char dataG[10];
+    char dataB[10];
+    sprintf(dataR, "%d", rgb.r);
+    sprintf(dataG, "%d", rgb.g);
+    sprintf(dataB, "%d", rgb.b);
+    ev3_lcd_draw_string("RGBValue.", 0, 36);
+    ev3_lcd_draw_string(dataR, 0, 46);
+    ev3_lcd_draw_string(dataG, 0, 56);
+    ev3_lcd_draw_string(dataB, 0, 66);
+}
 
-        // 走行距離を取得する
-        long long getDistance() {
-            return distance;
-        }
+    int getBrightness() {
+        return ev3_color_sensor_get_reflect(color_sensor);
+    }
+};
+
+
+/**
+* LineTrace クラス
+*/
+
+class LineTrace {
+public:
+    int brightness;
+    int prevError;
+    int integral;
+    int forwardSpeed;
+    int target;
+
+    LineTrace() {
+        brightness = 0;
+        prevError = 0;
+        integral = 0;
+        target=17;
+        forwardSpeed=30;
+    }
+
+    void lineTraceAction(double Kp, double Kd) {
+        ColorSensor colorSensor; 
+        brightness = colorSensor.getBrightness(); 
+
+        int error = target - brightness;
+
+        // PD制御のパラメータ
+        //double Kp = 1.2; // 比例制御のゲイン
+        //double Kd = 0.8; // 微分制御のゲイン
+
+        // 偏差の変化量（微分）
+        int derivative = error - prevError;
+        prevError = error;
+
+        // 偏差の積分
+        integral += error;
+
+        // PD制御に基づいてモーターのパワーを計算
+        int power = static_cast<int>((Kp * error) + (Kd * derivative));
+
+        // モーター制御
+        if (power < -100) power = -100;
+        if (power > 100) power = +100;
+
+        ev3_motor_set_power(right_motor, forwardSpeed - power);
+        ev3_motor_set_power(left_motor, forwardSpeed + power);
+    }
+
     private:
-        // 属性
-        long long distance; // 走行距離
+    /**
+    * 属性
+    */
+    /**
+    * 関連
+    */
+    //ColorSensor colorSensor;
+    
 };
 
 /**
- * LineTrace クラス
- */
-class LineTraceClass {
-    public:
-        // コンストラクタ
-        LineTraceClass() {
-            prevError = 0; // 誤差の合計値
-            distance = 0L;  // 走行距離
-        }
+* ObstacleDetection クラス
+*/
+class ObstacleDetection {
+public:
+    /**
+    * 属性
+    */
+    int obsDistance;
+    
+    /**
+    * 関連
+    */
+    
+    /**
+    * コンストラクタ
+    */
+    ObstacleDetection() {
+        /* 10[cm] */
+        obsDistance = 10;
+    }
 
-        // 操作
-        // ライントレースして走行する
-        void lineTraceAction(int brightness, double Kp, double Kd, int target = 20) {
-            // PD制御の計算
-            int error = target - brightness;
-            int derivative = error - prevError; // 偏差の変化量（微分）
-            prevError = error;
-
-            // モーター制御
-            int forwardSpeed = 20; // スピード
-            int power = static_cast<int>((Kp * error) + (Kd * derivative));
-            power = min(max(power, -100), 100);
-            ev3_motor_set_power(left_motor, forwardSpeed - power);
-            ev3_motor_set_power(right_motor, forwardSpeed + power);
-        }
-
-        // 走行距離をリセットする
-        void resetDistance() {
-            distance = 0;
-        }
-
-        // 走行距離をインクリメントする
-        void incDistance() {
-            distance++;
-        }
-
-        // 走行距離を取得する
-        long long getDistance() {
-            return distance;
-        }
-    private:
-        // 属性
-        int prevError;      // 誤差の合計値
-        long long distance; // 走行距離
+    /**
+    * 操作
+    */
+    bool isDetected() {
+        return( ev3_ultrasonic_sensor_get_distance(sonar_sensor) < obsDistance );
+    }
 };
 
+
 /**
- * NyoroSanta クラス
+ * Nyoroクラス
  */
-class NyoroSantaClass {
-    public:
-        // コンストラクタ
-        NyoroSantaClass() {
-            ev3_lcd_draw_string("Santa Class is created.", 0, 16);
+class NyoroClass {
+public:
 
-            // センサー入力ポートの設定
-            ev3_sensor_config(sonar_sensor, ULTRASONIC_SENSOR);
-            ev3_sensor_config(color_sensor, COLOR_SENSOR);
-            ev3_color_sensor_get_reflect(color_sensor); // 反射率モード
-            ev3_sensor_config(touch_sensor, TOUCH_SENSOR);
+    /**
+    * 状態
+    */
+    enum RunState {
+        STATE_STOP    = 0,
+        STATE_LINE    = 1,
+        STATE_TURN    = 3,
+        STATE_FORWARD = 2,
+    };
 
-            // モーター出力ポートの設定
-            ev3_motor_config(left_motor, LARGE_MOTOR);
-            ev3_motor_config(right_motor, LARGE_MOTOR);
+    /**
+    * コンストラクタ
+    */
+    NyoroClass() {
+        ev3_lcd_draw_string("Nyoro Class is created.", 0, 16);
 
-            mode = NORMAL_MODE; // 初期状態は通常モード
-        }
+        /* センサー入力ポートの設定 */
+        ev3_sensor_config(sonar_sensor, ULTRASONIC_SENSOR);
+        ev3_sensor_config(color_sensor, COLOR_SENSOR);
+        ev3_color_sensor_get_reflect(color_sensor); /* 反射率モード */
+        ev3_sensor_config(touch_sensor, TOUCH_SENSOR);
 
-        // 操作
-        // 動作を実行する
-        void start() {
-            // 走行モード選択
-            modeSelectAction();
+        /* モーター出力ポートの設定 */
+        ev3_motor_config(left_motor, LARGE_MOTOR);
+        ev3_motor_config(right_motor, LARGE_MOTOR);
 
-            // 現在の走行モードの内容ごとに分岐する
-            if (mode == NORMAL_MODE) {
-                // 通常モード
-                normalModeAction();
+        state = STATE_STOP;
+        turnSpeed = 20;//20;
+        forwardSpeed = 30;
+    }
+
+    /**
+    * 操作
+    */
+    /* 停止状態 タッチセンサ押下待ち */
+    void procStopState() {
+        runControl.stop();
+    
+        while(1) {
+            if( runButton.isPressed() ) {
+                state = STATE_LINE;
+                break;
+            };
+            
+            tslp_tsk(200 * 1000U); /* 200 msec周期起動 */
+        };
+    }
+
+    /* ライントレース */
+    void procLineState() {
+        while(1) {
+            lineTrace.lineTraceAction(0.5,2.0);
+            if( runButton.isPressed() ) {
+                state = STATE_STOP;
+                break;
+            };
+            
+            //if( obstacleDetection.isDetected() == false ) {
+                //state = STATE_FORWARD;
+                //break;
+            //};
+            
+            //runControl.turn( turnSpeed );
+            
+            tslp_tsk(200 * 1000U); /* 200 msec周期起動 */
+        };
+        
+        runControl.stop();
+    }
+    
+
+    /* 前進状態 */
+    void procForwardState() {
+        while(1) {
+            if( runButton.isPressed() ) {
+                state = STATE_STOP;
+                break;
+            };
+            
+            if( obstacleDetection.isDetected() ) {
+                state = STATE_TURN;
+                break;
+            };
+        
+            runControl.forward( forwardSpeed );
+        
+            tslp_tsk(200 * 1000U); /* 200 msec周期起動 */
+        };
+        
+        runControl.stop();
+    }
+
+    void start() {
+        while(1) {
+            ev3_lcd_draw_string("                ", 0, 26);
+            if( state == STATE_STOP ) {
+                ev3_lcd_draw_string("Stop.", 0, 26);
+                procStopState();
+            } else if( state == STATE_LINE ) {
+                ev3_lcd_draw_string("Line.", 0, 26);
+                procLineState();
+            } else if( state == STATE_FORWARD ) {
+                ev3_lcd_draw_string("Forward.", 0, 26);
+                procForwardState();
             } else {
-                // 爆速モード
-                rapidModeAction();
-            }
+                ev3_lcd_draw_string("State Invalid.", 0, 26);
+            };
+            
+            tslp_tsk(100 * 1000U); /* 100 msec周期起動 */
+        };
+    }
 
-            // サンタ走行（メソッドにする）
-            ; /* TODO */
-
-            // プレゼント投下（メソッドにはしない）
-            ; /* TODO */
-        }
-
-        // 走行体の走行モードを選択する
-        void modeSelectAction() {
-            while(1) {
-                // 選択したモードを取得する
-                mode = modeSelect.getMode();
-
-                // LCDへの表示によるチェック用のコード
-                if (mode == NORMAL_MODE) {
-                    ev3_lcd_draw_string("Normal_mode.", 0, 36);
-                } else {
-                    ev3_lcd_draw_string("Rapid_mode.", 0, 36);
-                }
-
-                // タッチセンサが押されたことを確認する
-                if (modeSelect.isButtonPressed()) {
-                    break;
-                }
-                tslp_tsk(100 * 1000U); // 100 msec周期起動
-            }
-        }
-
-        // 通常モードで走行する
-        void normalModeAction() {
-            while(1) {
-                /* TODO */
-                if (button.isPressed()) {
-                    break; // ここでは検証のため、ボタンを押してbreakしているが、本番では青色を検知したらbreakするようにする。
-                };
-                // ライントレースして走行する
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.3, 0.8, 5);
-                tslp_tsk(200 * 1000U); // 200 msec周期起動
-            }
-
-            // 停止（本番ではこの行にあるコードは使わない。検証のためのコード。）
-            runControl.stop();
-        }
-
-        // 爆速モードで走行する
-        void rapidModeAction() {
-            ; /* TODO */
-        }
-    private:
-        // 属性
-        int mode; // モード
-    // 関連
-    ModeSelectClass modeSelect;
-    LineTraceClass  linetrace;
-    ColorSensor     colorSensor;
-    Button          button;
-    RunControl      runControl;
+private:
+    /**
+    * 属性
+    */
+    int state;
+    int turnSpeed;
+    int forwardSpeed;
+  
+    /**
+    * 関連
+    */
+    LineTrace         lineTrace;
+    //ColorSensor       colorSensor;
+    Button            runButton;          /* Buttonクラス */
+    RunControl        runControl;         /* RunControlクラス */
+    ObstacleDetection obstacleDetection;  /* ObstacleDetectionクラス */
 };
 
 
-
-// Santaオブジェクト生成
-NyoroSantaClass nyoroSanta;
+/* Nyoroオブジェクト生成 */
+NyoroClass nyoro;
 
 void main_task(intptr_t unused) {
-    // 動作を実行する
-    nyoroSanta.start();
+    /* Nyoro start */
+    nyoro.start();
 }
