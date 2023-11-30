@@ -296,8 +296,8 @@ class LineTraceClass {
             int forwardSpeed = 20; // スピード
             int power = static_cast<int>((Kp * error) + (Kd * derivative));
             power = min(max(power, -100), 100);
-            ev3_motor_set_power(left_motor, forwardSpeed - power);
-            ev3_motor_set_power(right_motor, forwardSpeed + power);
+            ev3_motor_set_power(left_motor, forwardSpeed + power);
+            ev3_motor_set_power(right_motor, forwardSpeed - power);
         }
 
         // 走行距離をリセットする
@@ -379,6 +379,7 @@ class NyoroSantaClass {
 
                 // タッチセンサが押されたことを確認する
                 if (modeSelect.isButtonPressed()) {
+                    tslp_tsk(500 * 1000U); // 500 msec周期起動
                     break;
                 }
                 tslp_tsk(100 * 1000U); // 100 msec周期起動
@@ -393,12 +394,14 @@ class NyoroSantaClass {
                     break; // ここでは検証のため、ボタンを押してbreakしているが、本番では青色を検知したらbreakするようにする。
                 };
                 // ライントレースして走行する
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.3, 0.8, 5);
-                tslp_tsk(200 * 1000U); // 200 msec周期起動
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.8, 0.1, 10);
+                tslp_tsk(30 * 1000U); // 30 msec周期起動
             }
 
-            // 停止（本番ではこの行にあるコードは使わない。検証のためのコード。）
-            runControl.stop();
+            while(1) {
+                // 停止（本番ではこの行にあるコードは使わない。検証のためのコード。）
+                runControl.stop();
+            }
         }
 
         // 爆速モードで走行する
