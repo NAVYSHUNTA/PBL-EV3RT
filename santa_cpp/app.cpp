@@ -38,9 +38,9 @@ static const sensor_port_t
     gyro_sensor     = EV3_PORT_4;
 
 static const motor_port_t
-    left_motor      = EV3_PORT_C,
+    arm_motor       = EV3_PORT_A,
     right_motor     = EV3_PORT_B,
-    arm_moter       = EV3_PORT_A;
+    left_motor      = EV3_PORT_C;
 
 /**
  * バックライトの色を指定する
@@ -48,6 +48,20 @@ static const motor_port_t
 static const ledcolor_t
     green_light     = LED_GREEN,
     orange_light    = LED_ORANGE;
+
+/////////////////////////////////////////削除するかも（ここから↓）///////////////////////////////
+/**
+ * カラーセンサの色に対応する値を指定する
+ */
+// const int COLOR_NONE_   = 0;
+// const int COLOR_BLACK_  = 1;
+// const int COLOR_BLUE_   = 2;
+// const int COLOR_GREEN_  = 3;
+// const int COLOR_YELLOW_ = 4;
+// const int COLOR_RED_    = 5;
+// const int COLOR_WHITE_  = 6;
+// const int COLOR_BROWN_  = 7;
+/////////////////////////////////////////削除するかも（ここまで↑）///////////////////////////////
 
 
 
@@ -206,6 +220,11 @@ class ColorSensor {
         int getBrightness() {
             return ev3_color_sensor_get_reflect(color_sensor);
         }
+
+        // 色に対応する値を取得する
+        int getColorValue() {
+            return static_cast<int>(ev3_color_sensor_get_color(color_sensor));
+        }
 };
 
 /**
@@ -220,7 +239,16 @@ class GiftDrop {
         // 操作
         // アームを2回上下運動させる
         void dropAction() {
-            ; /* TODO */
+            /* TODO */
+            int degrees = 30;
+            uint32_t speed_abs = 4;
+            ev3_motor_rotate(arm_motor, degrees, speed_abs, true);
+            tslp_tsk(70 * 1000U); // 70 msec周期起動
+            ev3_motor_rotate(arm_motor, -degrees, speed_abs, true);
+            tslp_tsk(70 * 1000U); // 70 msec周期起動
+            ev3_motor_rotate(arm_motor, degrees, speed_abs, true);
+            tslp_tsk(70 * 1000U); // 70 msec周期起動
+            ev3_motor_rotate(arm_motor, -degrees, speed_abs, true);
         }
 };
 
@@ -231,7 +259,6 @@ class RunControl {
     public:
         // コンストラクタ
         RunControl() {
-            distance = 0L;  // 走行距離
         }
 
         // 操作
@@ -256,21 +283,13 @@ class RunControl {
 
         // 走行距離をリセットする
         void resetDistance() {
-            distance = 0;
-        }
-
-        // 走行距離をインクリメントする
-        void incDistance() {
-            distance++;
+            ev3_motor_reset_counts(right_motor);
         }
 
         // 走行距離を取得する
         long long getDistance() {
-            return distance;
+            return static_cast<long long>(ev3_motor_get_counts(right_motor) * 31.4 / 360);
         }
-    private:
-        // 属性
-        long long distance; // 走行距離
 };
 
 /**
@@ -281,7 +300,6 @@ class LineTraceClass {
         // コンストラクタ
         LineTraceClass() {
             prevError = 0; // 誤差の合計値
-            distance = 0L;  // 走行距離
         }
 
         // 操作
@@ -302,22 +320,16 @@ class LineTraceClass {
 
         // 走行距離をリセットする
         void resetDistance() {
-            distance = 0;
-        }
-
-        // 走行距離をインクリメントする
-        void incDistance() {
-            distance++;
+            ev3_motor_reset_counts(right_motor);
         }
 
         // 走行距離を取得する
         long long getDistance() {
-            return distance;
+            return static_cast<long long>(ev3_motor_get_counts(right_motor) * 31.4 / 360);
         }
     private:
         // 属性
-        int prevError;      // 誤差の合計値
-        long long distance; // 走行距離
+        int prevError; // 誤差の合計値
 };
 
 /**
@@ -336,8 +348,9 @@ class NyoroSantaClass {
             ev3_sensor_config(touch_sensor, TOUCH_SENSOR);
 
             // モーター出力ポートの設定
-            ev3_motor_config(left_motor, LARGE_MOTOR);
+            ev3_motor_config(arm_motor, LARGE_MOTOR);
             ev3_motor_config(right_motor, LARGE_MOTOR);
+            ev3_motor_config(left_motor, LARGE_MOTOR);
 
             mode = NORMAL_MODE; // 初期状態は通常モード
         }
@@ -361,7 +374,7 @@ class NyoroSantaClass {
             ; /* TODO */
 
             // プレゼント投下（メソッドにはしない）
-            ; /* TODO */
+            giftDrop.dropAction();
         }
 
         // 走行体の走行モードを選択する
@@ -390,11 +403,11 @@ class NyoroSantaClass {
         void normalModeAction() {
             while(1) {
                 /* TODO */
-                if (button.isPressed()) {
+                if (button.isPressed() || colorSensor.getColorValue() == COLOR_GREEN) {
                     break; // ここでは検証のため、ボタンを押してbreakしているが、本番では青色を検知したらbreakするようにする。
                 };
                 // ライントレースして走行する
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.8, 0.1, 10);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.9, 0.4, 15);
                 tslp_tsk(30 * 1000U); // 30 msec周期起動
             }
 
@@ -417,6 +430,7 @@ class NyoroSantaClass {
     ColorSensor     colorSensor;
     Button          button;
     RunControl      runControl;
+    GiftDrop        giftDrop;
 };
 
 
