@@ -243,11 +243,11 @@ class GiftDrop {
             int degrees = 30;
             uint32_t speed_abs = 4;
             ev3_motor_rotate(arm_motor, degrees, speed_abs, true);
-            tslp_tsk(70 * 1000U); // 70 msec周期起動
+            tslp_tsk(70 * 1000U);
             ev3_motor_rotate(arm_motor, -degrees, speed_abs, true);
-            tslp_tsk(70 * 1000U); // 70 msec周期起動
+            tslp_tsk(70 * 1000U);
             ev3_motor_rotate(arm_motor, degrees, speed_abs, true);
-            tslp_tsk(70 * 1000U); // 70 msec周期起動
+            tslp_tsk(70 * 1000U);
             ev3_motor_rotate(arm_motor, -degrees, speed_abs, true);
         }
 };
@@ -275,10 +275,13 @@ class RunControl {
         }
 
         // 回転する
-        void rotate(int degrees) {
-            /* TODO */
-            // ev3_motor_rotate(left_motor, degrees, speed_abs, true);
-            // ev3_motor_reset_counts(left_motor);
+        void rotate(motor_port_t motor_port, int degrees, uint32_t speed_abs) {
+            ev3_motor_rotate(motor_port, degrees, speed_abs, true);
+        }
+
+        // ステアリングする
+        void steer(int power, int turn_ratio) {
+            ev3_motor_steer(left_motor, right_motor, power, turn_ratio);
         }
 
         // 走行距離をリセットする
@@ -360,7 +363,6 @@ class NyoroSantaClass {
         void start() {
             // 走行モード選択
             modeSelectAction();
-
             // 現在の走行モードの内容ごとに分岐する
             if (mode == NORMAL_MODE) {
                 // 通常モード
@@ -374,7 +376,13 @@ class NyoroSantaClass {
             ; /* TODO */
 
             // プレゼント投下（メソッドにはしない）
-            giftDrop.dropAction();
+            // giftDrop.dropAction();
+
+            // ここからは実験用
+            // runControl.rotate(left_motor, 272, 100); // 90度回転
+            // runControl.steer(20, 30); // 片方のモータのパワーを30%減らしてステアリング
+            // tslp_tsk(1000 * 1000U);
+
         }
 
         // 走行体の走行モードを選択する
@@ -392,10 +400,10 @@ class NyoroSantaClass {
 
                 // タッチセンサが押されたことを確認する
                 if (modeSelect.isButtonPressed()) {
-                    tslp_tsk(500 * 1000U); // 500 msec周期起動
+                    tslp_tsk(500 * 1000U);
                     break;
                 }
-                tslp_tsk(100 * 1000U); // 100 msec周期起動
+                tslp_tsk(100 * 1000U);
             }
         }
 
@@ -407,8 +415,9 @@ class NyoroSantaClass {
                     break; // ここでは検証のため、ボタンを押してbreakしているが、本番では青色を検知したらbreakするようにする。
                 };
                 // ライントレースして走行する
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.9, 0.4, 15);
-                tslp_tsk(30 * 1000U); // 30 msec周期起動
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 1.1, 0.8, 17);
+                // linetrace.lineTraceAction(colorSensor.getBrightness(), 0.9, 0.4, 15);
+                tslp_tsk(30 * 1000U);
             }
 
             while(1) {
