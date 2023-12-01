@@ -49,20 +49,6 @@ static const ledcolor_t
     green_light     = LED_GREEN,
     orange_light    = LED_ORANGE;
 
-/////////////////////////////////////////削除するかも（ここから↓）///////////////////////////////
-/**
- * カラーセンサの色に対応する値を指定する
- */
-// const int COLOR_NONE_   = 0;
-// const int COLOR_BLACK_  = 1;
-// const int COLOR_BLUE_   = 2;
-// const int COLOR_GREEN_  = 3;
-// const int COLOR_YELLOW_ = 4;
-// const int COLOR_RED_    = 5;
-// const int COLOR_WHITE_  = 6;
-// const int COLOR_BROWN_  = 7;
-/////////////////////////////////////////削除するかも（ここまで↑）///////////////////////////////
-
 
 
 /**
@@ -286,6 +272,7 @@ class RunControl {
 
         // 走行距離をリセットする
         void resetDistance() {
+            ev3_motor_config(right_motor, LARGE_MOTOR);
             ev3_motor_reset_counts(right_motor);
         }
 
@@ -323,6 +310,7 @@ class LineTraceClass {
 
         // 走行距離をリセットする
         void resetDistance() {
+            ev3_motor_config(right_motor, LARGE_MOTOR);
             ev3_motor_reset_counts(right_motor);
         }
 
@@ -413,9 +401,28 @@ class NyoroSantaClass {
                 /* TODO */
                 if (button.isPressed() || colorSensor.getColorValue() == COLOR_GREEN) {
                     break; // ここでは検証のため、ボタンを押してbreakしているが、本番では青色を検知したらbreakするようにする。
-                };
+                }
                 // ライントレースして走行する
                 linetrace.lineTraceAction(colorSensor.getBrightness(), 1.1, 0.8, 17);
+                // linetrace.lineTraceAction(colorSensor.getBrightness(), 0.9, 0.4, 15);
+                tslp_tsk(30 * 1000U);
+            }
+
+            linetrace.resetDistance();
+            runControl.stop();
+
+            tslp_tsk(1000 * 1000U);
+
+            while(1) {
+                if (button.isPressed() || colorSensor.getColorValue() == COLOR_GREEN) {
+                    break; // ここでは検証のため、ボタンを押してbreakしているが、本番では青色を検知したらbreakするようにする。
+                }
+                // ライントレースして走行する
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 1.1, 0.8, 17);
+                // runControl.forward(20, 20);
+                if (linetrace.getDistance() > 150) {
+                    break;
+                }
                 // linetrace.lineTraceAction(colorSensor.getBrightness(), 0.9, 0.4, 15);
                 tslp_tsk(30 * 1000U);
             }
@@ -428,7 +435,60 @@ class NyoroSantaClass {
 
         // 爆速モードで走行する
         void rapidModeAction() {
-            ; /* TODO */
+            linetrace.resetDistance();
+            while(1) {
+                /* TODO */
+                if (linetrace.getDistance() > 10) {
+                    break;
+                }
+                runControl.forward(20, 20);
+                tslp_tsk(30 * 1000U);
+            }
+
+            linetrace.resetDistance();
+            runControl.stop();
+            tslp_tsk(300 * 1000U);
+            runControl.rotate(right_motor, 150, 20); // 近道の準備
+
+            while(1) {
+                // 近道
+                if (linetrace.getDistance() > 280) {
+                    break;
+                }
+                runControl.forward(40, 40);
+                tslp_tsk(30 * 1000U);
+            }
+
+            runControl.stop();
+            tslp_tsk(300 * 1000U);
+
+            while(1) {
+                if (colorSensor.getColorValue() == COLOR_BLACK) {
+                    break;
+                }
+                runControl.forward(5, 5);
+                tslp_tsk(30 * 1000U);
+            }
+
+            tslp_tsk(300 * 1000U);
+            runControl.rotate(left_motor, 280, 20); // 近道の終了
+            tslp_tsk(300 * 1000U);
+
+            while(1) {
+                /* TODO */
+                if (button.isPressed() || colorSensor.getColorValue() == COLOR_GREEN) {
+                    break; // ここでは検証のため、ボタンを押してbreakしているが、本番では青色を検知したらbreakするようにする。
+                }
+                // ライントレースして走行する
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 1.1, 0.8, 17);
+                // linetrace.lineTraceAction(colorSensor.getBrightness(), 0.9, 0.4, 15);
+                tslp_tsk(30 * 1000U);
+            }
+
+            while(1) {
+                // 停止（本番ではこの行にあるコードは使わない。検証のためのコード。）
+                runControl.stop();
+            }
         }
     private:
         // 属性
