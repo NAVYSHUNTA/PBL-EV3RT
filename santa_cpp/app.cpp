@@ -280,6 +280,18 @@ class RunControl {
         long long getDistance() {
             return static_cast<long long>(ev3_motor_get_counts(right_motor) * 31.4 / 360);
         }
+
+        // 一定距離、直線走行する
+        void forwardDistance(int distance, int power = 20) {
+            resetDistance(); // 走行距離をリセット
+            tslp_tsk(30 * 1000U);
+            forward(power, power);
+            while (getDistance() <= distance) {
+                tslp_tsk(30 * 1000U);
+            }
+            stop();
+            tslp_tsk(30 * 1000U);
+        }
 };
 
 /**
@@ -294,14 +306,13 @@ class LineTraceClass {
 
         // 操作
         // ライントレースして走行する
-        void lineTraceAction(int brightness, double Kp, double Kd, int target = 20) {
+        void lineTraceAction(int brightness, double Kp, double Kd, int forwardSpeed = 20, int target = 20) {
             // PD制御の計算
             int error = target - brightness;
             int derivative = error - prevError; // 偏差の変化量（微分）
             prevError = error;
 
             // モーター制御
-            int forwardSpeed = 20; // スピード
             int power = static_cast<int>((Kp * error) + (Kd * derivative));
             power = min(max(power, -100), 100);
             ev3_motor_set_power(left_motor, forwardSpeed + power);
@@ -349,19 +360,24 @@ class NyoroSantaClass {
         // 操作
         // 動作を実行する
         void start() {
-            // 走行モード選択
-            modeSelectAction();
+            modeSelectAction(); // 走行モード選択
+
             // 現在の走行モードの内容ごとに分岐する
             if (mode == NORMAL_MODE) {
-                // 通常モード
-                normalModeAction();
+                normalModeAction(); // 通常モード
             } else {
-                // 爆速モード
-                rapidModeAction();
+                rapidModeAction();  // 爆速モード
             }
 
-            // サンタ走行（メソッドにする）
-            ; /* TODO */
+            // サンタ走行
+            // 緑色サークルから補助線の終端までの走行（灰色サークル）
+            goToGrayCircleAction();
+
+            // フリーエリア内の走行（時計回りで走行）
+            moveClockwiseAction();
+
+            // フリーエリア内の走行（牛耕式で走行）
+            moveZigzagAction();
 
             // プレゼント投下（メソッドにはしない）
             // giftDrop.dropAction();
@@ -397,98 +413,168 @@ class NyoroSantaClass {
 
         // 通常モードで走行する
         void normalModeAction() {
-            while(1) {
-                /* TODO */
-                if (button.isPressed() || colorSensor.getColorValue() == COLOR_GREEN) {
-                    break; // ここでは検証のため、ボタンを押してbreakしているが、本番では青色を検知したらbreakするようにする。
-                }
-                // ライントレースして走行する
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 1.1, 0.8, 17);
-                // linetrace.lineTraceAction(colorSensor.getBrightness(), 0.9, 0.4, 15);
-                tslp_tsk(30 * 1000U);
-            }
-
+            // ライントレース（カーブに強い）
             linetrace.resetDistance();
-            runControl.stop();
-
-            tslp_tsk(1000 * 1000U);
-
+            tslp_tsk(30 * 1000U);
             while(1) {
-                if (button.isPressed() || colorSensor.getColorValue() == COLOR_GREEN) {
-                    break; // ここでは検証のため、ボタンを押してbreakしているが、本番では青色を検知したらbreakするようにする。
-                }
-                // ライントレースして走行する
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 1.1, 0.8, 17);
-                // runControl.forward(20, 20);
-                if (linetrace.getDistance() > 150) {
+                // 一定距離、色の識別を行わない
+                if (linetrace.getDistance() > 500) {
                     break;
                 }
-                // linetrace.lineTraceAction(colorSensor.getBrightness(), 0.9, 0.4, 15);
+                // ライントレースして走行する
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 1.1, 0.8, 17);
                 tslp_tsk(30 * 1000U);
             }
 
+            // ライントレース（カーブに弱いがまっすぐ走る）
+            linetrace.resetDistance();
+            runControl.stop();
+            tslp_tsk(30 * 1000U);
             while(1) {
-                // 停止（本番ではこの行にあるコードは使わない。検証のためのコード。）
-                runControl.stop();
+                // 一定距離、色の識別を行わない
+                if (linetrace.getDistance() > 80) {
+                    break;
+                }
+                // ライントレースして走行する
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.8, 0.5, 15);
+                tslp_tsk(30 * 1000U);
             }
+
+            // ライントレース（色の識別を開始する）
+            runControl.stop();
+            tslp_tsk(30 * 1000U);
+            while(1) {
+                // 緑色サークルを検知したとき
+                if (colorSensor.getColorValue() == COLOR_GREEN) {
+                    break;
+                }
+                // ライントレースして走行する
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.8, 0.5, 15);
+                tslp_tsk(30 * 1000U);
+            }
+
+            runControl.stop();
+            tslp_tsk(30 * 1000U);
         }
 
         // 爆速モードで走行する
         void rapidModeAction() {
-            linetrace.resetDistance();
-            while(1) {
-                /* TODO */
-                if (linetrace.getDistance() > 10) {
-                    break;
-                }
-                runControl.forward(20, 20);
-                tslp_tsk(30 * 1000U);
-            }
+            // 一定距離、直線走行する
+            forwardDistance(10);
 
+            // 近道するために回転し、直線走行する
             linetrace.resetDistance();
             runControl.stop();
-            tslp_tsk(300 * 1000U);
-            runControl.rotate(right_motor, 150, 20); // 近道の準備
+            tslp_tsk(30 * 1000U);
+            runControl.rotate(right_motor, 160, 20); // 回転
 
-            while(1) {
-                // 近道
-                if (linetrace.getDistance() > 280) {
-                    break;
-                }
-                runControl.forward(40, 40);
-                tslp_tsk(30 * 1000U);
-            }
+            // 近道（高速で）
+            forwardDistance(275, 40);
 
+            // 近道（低速で）
             runControl.stop();
-            tslp_tsk(300 * 1000U);
-
+            tslp_tsk(30 * 1000U);
+            runControl.forward(5, 5);
             while(1) {
+                // 黒線を見つけるまで直線走行する
                 if (colorSensor.getColorValue() == COLOR_BLACK) {
                     break;
                 }
-                runControl.forward(5, 5);
                 tslp_tsk(30 * 1000U);
             }
 
-            tslp_tsk(300 * 1000U);
-            runControl.rotate(left_motor, 280, 20); // 近道の終了
-            tslp_tsk(300 * 1000U);
+            // 黒線上をライントレースするために回転し、再度ライントレースする
+            runControl.rotate(left_motor, 280, 20);
+            linetrace.resetDistance();
+            tslp_tsk(30 * 1000U);
 
             while(1) {
-                /* TODO */
-                if (button.isPressed() || colorSensor.getColorValue() == COLOR_GREEN) {
-                    break; // ここでは検証のため、ボタンを押してbreakしているが、本番では青色を検知したらbreakするようにする。
+                if (linetrace.getDistance() > 150) {
+                    break;
                 }
                 // ライントレースして走行する
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 1.1, 0.8, 17);
-                // linetrace.lineTraceAction(colorSensor.getBrightness(), 0.9, 0.4, 15);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.8, 0.5, 15);
                 tslp_tsk(30 * 1000U);
             }
 
+            // ライントレース（色の識別を開始する）
+            linetrace.resetDistance();
+            runControl.stop();
+            tslp_tsk(30 * 1000U);
             while(1) {
-                // 停止（本番ではこの行にあるコードは使わない。検証のためのコード。）
+                if (colorSensor.getColorValue() == COLOR_GREEN) {
+                    break;
+                }
+                // ライントレースして走行する
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.8, 0.5, 15);
+                tslp_tsk(30 * 1000U);
+            }
+
+            // 停止（本番ではこの行にあるコードは使わない。検証のためのコード。）
+            while(1) {
                 runControl.stop();
             }
+        }
+
+        // 緑色サークルから補助線の終端までの走行（灰色サークル）
+        void goToGrayCircleAction() {
+            // 緑色サークル上での90度回転
+            runControl.stop();
+            tslp_tsk(30 * 1000U);
+            runControl.rotate(left_motor, 310, 40); // 回転
+            tslp_tsk(500 * 1000U);
+
+            // 直線走行
+            runControl.stop();
+            tslp_tsk(30 * 1000U);
+            while(1) {
+                // 赤色サークルを検知したとき
+                if (colorSensor.getColorValue() == COLOR_RED) {
+                    runControl.stop();
+                    tslp_tsk(30 * 1000U);
+                    runControl.rotate(left_motor, 50, 40); // 回転
+                    tslp_tsk(500 * 1000U);
+                    break;
+                }
+                // ライントレースして走行する
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15);
+                tslp_tsk(30 * 1000U);
+            }
+
+            // 一定距離、直線走行
+            runControl.forwardDistance(50);
+            runControl.stop();
+            tslp_tsk(30 * 1000U);
+            //runControl.rotate(right_motor, 30, 40); // 回転
+            runControl.forwardDistance(10);
+            runControl.resetDistance();
+            runControl.stop();
+            tslp_tsk(30 * 1000U);
+
+            // ライントレース
+            while (1) {
+                if (linetrace.getDistance() >= 30){
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 1.0, 0.8, 17);
+                tslp_tsk(30 * 1000U);
+            }
+
+            // 停止（本番ではこの行にあるコードは使わない。検証のためのコード。）
+            while(1) {
+                runControl.stop();
+                tslp_tsk(30 * 1000U);
+            }
+        }
+
+        // 時計回りで走行
+        void moveClockwiseAction() {
+            ;
+        }
+
+        // 牛耕式で走行
+        void moveZigzagAction() {
+            ;
         }
     private:
         // 属性
