@@ -460,20 +460,27 @@ class NyoroSantaClass {
         // 爆速モードで走行する
         void rapidModeAction() {
             // 一定距離、直線走行する
-            forwardDistance(10);
+            while(1) {
+                // 黒線を見つけるまで直線走行する
+                if (runControl.getDistance() > 20) {
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15);
+                tslp_tsk(30 * 1000U);
+            }
 
             // 近道するために回転し、直線走行する
             linetrace.resetDistance();
             runControl.stop();
+            runControl.rotate(right_motor, 195, 100); // 回転
             tslp_tsk(30 * 1000U);
-            runControl.rotate(right_motor, 160, 20); // 回転
 
             // 近道（高速で）
-            forwardDistance(275, 40);
+            runControl.forwardDistance(250, 40);
 
             // 近道（低速で）
             runControl.stop();
-            tslp_tsk(30 * 1000U);
+            tslp_tsk(100 * 1000U);
             runControl.forward(5, 5);
             while(1) {
                 // 黒線を見つけるまで直線走行する
@@ -484,7 +491,7 @@ class NyoroSantaClass {
             }
 
             // 黒線上をライントレースするために回転し、再度ライントレースする
-            runControl.rotate(left_motor, 280, 20);
+            runControl.rotate(left_motor, 210, 100);
             linetrace.resetDistance();
             tslp_tsk(30 * 1000U);
 
