@@ -49,7 +49,11 @@ static const ledcolor_t
     green_light     = LED_GREEN,
     orange_light    = LED_ORANGE;
 
-
+/**
+ * 走行するエッジを指定する
+ */
+const int LEFT_EDGE  = false; // 左エッジ
+const int RIGHT_EDGE = true;  // 右エッジ
 
 /**
 * Button クラス
@@ -175,33 +179,6 @@ class ColorSensor {
         }
 
         // 操作
-        // 反射光
-        void reflectValue() {
-            uint8_t value=ev3_color_sensor_get_reflect(color_sensor);
-            char data[10];
-            sprintf(data,"%d",value);
-
-            ev3_lcd_draw_string("reflectValue.",0,36);
-            ev3_lcd_draw_string(data,0,46);
-        }
-
-        // RGB
-        void RGBValue() {
-            rgb_raw_t rgb;
-            ev3_color_sensor_get_rgb_raw(color_sensor,&rgb);
-            char dataR[10];
-            char dataG[10];
-            char dataB[10];
-            sprintf(dataR,"%d",rgb.r);
-            sprintf(dataG,"%d",rgb.g);
-            sprintf(dataB,"%d",rgb.b);
-
-            ev3_lcd_draw_string("RGBValue.",0,36);
-            ev3_lcd_draw_string(dataR,0,46);
-            ev3_lcd_draw_string(dataG,0,56);
-            ev3_lcd_draw_string(dataB,0,66);
-        }
-
         // 輝度値を取得する
         int getBrightness() {
             return ev3_color_sensor_get_reflect(color_sensor);
@@ -211,6 +188,29 @@ class ColorSensor {
         int getColorValue() {
             return static_cast<int>(ev3_color_sensor_get_color(color_sensor));
         }
+
+        // 青色かどうかを判定する
+        bool isBlue() {
+            rgb_raw_t rgb;
+            ev3_color_sensor_get_rgb_raw(color_sensor, &rgb);
+            if ((rgb.r >= 0 && rgb.r <= 30) && (rgb.g >= 20 && rgb.g <= 50) && (rgb.b >= 50 && rgb.b <= 100)) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        // 黄色かどうかを判定する
+        bool isYellow() {
+            rgb_raw_t rgb;
+            ev3_color_sensor_get_rgb_raw(color_sensor, &rgb);
+            if ((rgb.r >= 80 && rgb.r <= 120) && (rgb.g >= 80 && rgb.g <= 120) && (rgb.b >= 0 && rgb.b <= 30)) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
 };
 
 /**
@@ -263,11 +263,7 @@ class RunControl {
         // 回転する
         void rotate(motor_port_t motor_port, int degrees, uint32_t speed_abs) {
             ev3_motor_rotate(motor_port, degrees, speed_abs, true);
-        }
-
-        // ステアリングする
-        void steer(int power, int turn_ratio) {
-            ev3_motor_steer(left_motor, right_motor, power, turn_ratio);
+            stop();
         }
 
         // 走行距離をリセットする
@@ -281,10 +277,9 @@ class RunControl {
             return static_cast<long long>(ev3_motor_get_counts(right_motor) * 31.4 / 360);
         }
 
-        // 一定距離、直線走行する
+        // 一定距離の直線走行を行う
         void forwardDistance(int distance, int power = 20) {
             resetDistance(); // 走行距離をリセット
-            tslp_tsk(30 * 1000U);
             forward(power, power);
             while (getDistance() <= distance) {
                 tslp_tsk(30 * 1000U);
@@ -306,7 +301,7 @@ class LineTraceClass {
 
         // 操作
         // ライントレースして走行する
-        void lineTraceAction(int brightness, double Kp, double Kd, int forwardSpeed = 20, int target = 20) {
+        void lineTraceAction(int brightness, double Kp, double Kd, int forwardSpeed = 20, int target = 20, bool edge = RIGHT_EDGE) {
             // PD制御の計算
             int error = target - brightness;
             int derivative = error - prevError; // 偏差の変化量（微分）
@@ -315,8 +310,16 @@ class LineTraceClass {
             // モーター制御
             int power = static_cast<int>((Kp * error) + (Kd * derivative));
             power = min(max(power, -100), 100);
-            ev3_motor_set_power(left_motor, forwardSpeed + power);
-            ev3_motor_set_power(right_motor, forwardSpeed - power);
+
+            if (RIGHT_EDGE) {
+                // 右エッジのとき
+                ev3_motor_set_power(left_motor, forwardSpeed + power);
+                ev3_motor_set_power(right_motor, forwardSpeed - power);
+            } else {
+                // 左エッジのとき
+                ev3_motor_set_power(left_motor, forwardSpeed - power);
+                ev3_motor_set_power(right_motor, forwardSpeed + power);
+            }
         }
 
         // 走行距離をリセットする
@@ -360,7 +363,8 @@ class NyoroSantaClass {
         // 操作
         // 動作を実行する
         void start() {
-            modeSelectAction(); // 走行モード選択
+            // 走行モード選択
+            modeSelectAction();
 
             // 現在の走行モードの内容ごとに分岐する
             if (mode == NORMAL_MODE) {
@@ -370,7 +374,7 @@ class NyoroSantaClass {
             }
 
             // サンタ走行
-            // 緑色サークルから補助線の終端までの走行（灰色サークル）
+            // 緑色サークルから補助線の終端（灰色サークル）までの走行
             goToGrayCircleAction();
 
             // フリーエリア内の走行（時計回りで走行）
@@ -379,14 +383,14 @@ class NyoroSantaClass {
             // フリーエリア内の走行（牛耕式で走行）
             moveZigzagAction();
 
-            // プレゼント投下（メソッドにはしない）
-            // giftDrop.dropAction();
+            // プレゼント投下
+            giftDrop.dropAction();
 
-            // ここからは実験用
-            // runControl.rotate(left_motor, 272, 100); // 90度回転
-            // runControl.steer(20, 30); // 片方のモータのパワーを30%減らしてステアリング
-            // tslp_tsk(1000 * 1000U);
-
+            // 停止
+            while (1) {
+                runControl.stop();
+                tslp_tsk(30 * 1000U);
+            }
         }
 
         // 走行体の走行モードを選択する
@@ -444,7 +448,6 @@ class NyoroSantaClass {
             runControl.stop();
             tslp_tsk(30 * 1000U);
             while(1) {
-                // 緑色サークルを検知したとき
                 if (colorSensor.getColorValue() == COLOR_GREEN) {
                     break;
                 }
@@ -452,14 +455,11 @@ class NyoroSantaClass {
                 linetrace.lineTraceAction(colorSensor.getBrightness(), 0.8, 0.5, 15);
                 tslp_tsk(30 * 1000U);
             }
-
-            runControl.stop();
-            tslp_tsk(30 * 1000U);
         }
 
         // 爆速モードで走行する
         void rapidModeAction() {
-            // 一定距離、直線走行する
+            // 一定距離の直線走行を行う
             while(1) {
                 // 黒線を見つけるまで直線走行する
                 if (runControl.getDistance() > 20) {
@@ -505,7 +505,6 @@ class NyoroSantaClass {
             }
 
             // ライントレース（色の識別を開始する）
-            linetrace.resetDistance();
             runControl.stop();
             tslp_tsk(30 * 1000U);
             while(1) {
@@ -516,72 +515,362 @@ class NyoroSantaClass {
                 linetrace.lineTraceAction(colorSensor.getBrightness(), 0.8, 0.5, 15);
                 tslp_tsk(30 * 1000U);
             }
-
-            // 停止（本番ではこの行にあるコードは使わない。検証のためのコード。）
-            while(1) {
-                runControl.stop();
-            }
         }
 
-        // 緑色サークルから補助線の終端までの走行（灰色サークル）
+        // 緑色サークルから補助線の終端（灰色サークル）までの走行
         void goToGrayCircleAction() {
-            // 緑色サークル上での90度回転
+            // 緑色サークル上での90度左回転
             runControl.stop();
-            tslp_tsk(30 * 1000U);
-            runControl.rotate(left_motor, 310, 40); // 回転
-            tslp_tsk(500 * 1000U);
+            tslp_tsk(300 * 1000U);
+            runControl.rotate(left_motor, 310, 40);
+            tslp_tsk(300 * 1000U);
 
-            // 直線走行
-            runControl.stop();
-            tslp_tsk(30 * 1000U);
-            while(1) {
-                // 赤色サークルを検知したとき
+            // 赤色サークルまで走行する
+            while (1) {
                 if (colorSensor.getColorValue() == COLOR_RED) {
                     runControl.stop();
-                    tslp_tsk(30 * 1000U);
-                    runControl.rotate(left_motor, 50, 40); // 回転
-                    tslp_tsk(500 * 1000U);
+                    runControl.forwardDistance(10);
+                    tslp_tsk(300 * 1000U);
+                    runControl.rotate(left_motor, 30, 30);
+                    tslp_tsk(300 * 1000U);
                     break;
                 }
-                // ライントレースして走行する
                 linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15);
                 tslp_tsk(30 * 1000U);
             }
 
-            // 一定距離、直線走行
-            runControl.forwardDistance(50);
-            runControl.stop();
-            tslp_tsk(30 * 1000U);
-            //runControl.rotate(right_motor, 30, 40); // 回転
-            runControl.forwardDistance(10);
-            runControl.resetDistance();
-            runControl.stop();
-            tslp_tsk(30 * 1000U);
-
-            // ライントレース
+            // 補助線を通ってフリーエリア内へ侵入する
             while (1) {
-                if (linetrace.getDistance() >= 30){
+                if (linetrace.getDistance() >= 40) {
+                    runControl.stop();
+                    runControl.rotate(right_motor, 20, 30);
+                    tslp_tsk(300 * 1000U);
+                    runControl.forwardDistance(12, 10);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 1.0, 0.8, 17);
-                tslp_tsk(30 * 1000U);
-            }
-
-            // 停止（本番ではこの行にあるコードは使わない。検証のためのコード。）
-            while(1) {
-                runControl.stop();
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
                 tslp_tsk(30 * 1000U);
             }
         }
 
         // 時計回りで走行
         void moveClockwiseAction() {
-            ;
+            // 青色（左上）へ向かう
+            while (1) {
+                if (colorSensor.isBlue()) {
+                    runControl.stop();
+                    tslp_tsk(300 * 1000U);
+                    runControl.forwardDistance(3, 10);
+                    runControl.rotate(left_motor, 63, 30);
+                    tslp_tsk(300 * 1000U);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                tslp_tsk(30 * 1000U);
+            }
+
+            // 灰色（上）へ向かう
+            linetrace.resetDistance();
+            while (1) {
+                if (linetrace.getDistance() >= 35) {
+                    runControl.stop();
+                    runControl.forwardDistance(9, 10);
+                    runControl.rotate(left_motor, 65, 30);
+                    tslp_tsk(300 * 1000U);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                tslp_tsk(30 * 1000U);
+            }
+
+            // 赤色（右上）へ向かう
+            while (1) {
+                if (colorSensor.getColorValue() == COLOR_RED) {
+                    runControl.stop();
+                    tslp_tsk(300 * 1000U);
+                    runControl.forwardDistance(3);
+                    runControl.rotate(left_motor, 56, 30);
+                    tslp_tsk(300 * 1000U);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                tslp_tsk(30 * 1000U);
+            }
+
+            // 灰色（右）へ向かう
+            linetrace.resetDistance();
+            while (1) {
+                if (linetrace.getDistance() >= 35) {
+                    runControl.stop();
+                    runControl.forwardDistance(9);
+                    tslp_tsk(300 * 1000U);
+                    runControl.rotate(left_motor, 64, 30);
+                    tslp_tsk(300 * 1000U);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                tslp_tsk(30 * 1000U);
+            }
+
+            // 黄色（右下）へ向かう
+            while (1) {
+                if (colorSensor.isYellow()) {
+                    runControl.stop();
+                    tslp_tsk(300 * 1000U);
+                    runControl.forwardDistance(3, 15);
+                    runControl.rotate(left_motor, 63, 30);
+                    tslp_tsk(300 * 1000U);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                tslp_tsk(30 * 1000U);
+            }
+
+            // 灰色（下）へ向かう
+            linetrace.resetDistance();
+            while (1) {
+                if (linetrace.getDistance() >= 35) {
+                    runControl.stop();
+                    runControl.forwardDistance(9);
+                    tslp_tsk(300 * 1000U);
+                    runControl.rotate(left_motor, 64, 30);
+                    tslp_tsk(300 * 1000U);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                tslp_tsk(30 * 1000U);
+            }
         }
 
         // 牛耕式で走行
         void moveZigzagAction() {
-            ;
+            // 緑色（左下）で回転する
+            while (1) {
+                if (colorSensor.getColorValue() == COLOR_GREEN) {
+                    runControl.stop();
+                    tslp_tsk(300 * 1000U);
+                    runControl.forwardDistance(15);
+                    tslp_tsk(300 * 1000U);
+                    runControl.rotate(left_motor, 790, 40);
+                    tslp_tsk(300 * 1000U);
+                    runControl.rotate(right_motor, 320, 40);
+                    tslp_tsk(300 * 1000U);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                tslp_tsk(30 * 1000U);
+            }
+
+            // 緑色（右下）へ向かう
+            while (1){
+                if (colorSensor.getColorValue() == COLOR_GREEN) {
+                    runControl.stop();
+                    tslp_tsk(300 * 1000U);
+                    runControl.forwardDistance(5, 15);
+                    tslp_tsk(300 * 1000U);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                tslp_tsk(30 * 1000U);
+            }
+
+            // 黄色（左下）へ向かう
+            while (1) {
+                if (colorSensor.isYellow()) {
+                    runControl.stop();
+                    tslp_tsk(300 * 1000U);
+                    runControl.forwardDistance(5, 15);
+                    tslp_tsk(300 * 1000U);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                tslp_tsk(30 * 1000U);
+            }
+
+            // 黄色（右下）へ向かう
+            while (1) {
+                if (colorSensor.isYellow()) {
+                    runControl.stop();
+                    tslp_tsk(300 * 1000U);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                tslp_tsk(30 * 1000U);
+            }
+
+            // 黄色（右下）で回転する
+            runControl.rotate(right_motor, 300, 40);
+            tslp_tsk(300 * 1000U);
+
+            // 黄色（右上）へ向かう
+            while (1) {
+                if (colorSensor.isYellow()) {
+                    runControl.stop();
+                    tslp_tsk(300 * 1000U);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15);
+                tslp_tsk(30 * 1000U);
+            }
+
+            // 黄色（右上）で回転する
+            runControl.rotate(right_motor, 300, 30);
+            tslp_tsk(500 * 1000U);
+
+            // 黄色（左上）へ向かう
+            while (1) {
+                if (colorSensor.isYellow()) {
+                    runControl.stop();
+                    tslp_tsk(300 * 1000U);
+                    runControl.forwardDistance(5, 15);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15);
+                tslp_tsk(30 * 1000U);
+            }
+
+            // 緑色（右上）へ向かう
+            while (1) {
+                if (colorSensor.getColorValue() == COLOR_GREEN) {
+                    runControl.stop();
+                    runControl.forwardDistance(5, 15);
+                    tslp_tsk(300 * 1000U);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15);
+                tslp_tsk(30 * 1000U);
+            }
+
+            // 緑色（左上）へ向かう
+            while (1) {
+                if (colorSensor.getColorValue() == COLOR_GREEN) {
+                    runControl.stop();
+                    tslp_tsk(300 * 1000U);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15);
+                tslp_tsk(30 * 1000U);
+            }
+
+            // 緑色（左上）で回転する
+            runControl.rotate(left_motor, 290, 30);
+            tslp_tsk(500 * 1000U);
+
+            // 青色（左下）へ向かう
+            while (1) {
+                if (colorSensor.isBlue()) {
+                    runControl.stop();
+                    tslp_tsk(300 * 1000U);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                tslp_tsk(30 * 1000U);
+            }
+
+            // 青色（左下）で回転する
+            runControl.rotate(left_motor, 270, 30);
+            tslp_tsk(500 * 1000U);
+
+            // 青色（右下）へ向かう
+            while (1) {
+                if (colorSensor.isBlue()) {
+                    runControl.stop();
+                    runControl.forwardDistance(5, 15);
+                    tslp_tsk(300 * 1000U);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                tslp_tsk(30 * 1000U);
+            }
+
+            // 赤色（左下）へ向かう
+            while (1) {
+                if (colorSensor.getColorValue() == COLOR_RED) {
+                    runControl.stop();
+                    tslp_tsk(300 * 1000U);
+                    runControl.forwardDistance(5, 15);
+                    tslp_tsk(300 * 1000U);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                tslp_tsk(30 * 1000U);
+            }
+
+            // 赤色（右下）へ向かう
+            while (1) {
+                if (colorSensor.getColorValue() == COLOR_RED) {
+                    runControl.stop();
+                    tslp_tsk(500 * 1000U);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                tslp_tsk(30 * 1000U);
+            }
+
+            // 赤色（右下）で回転する
+            runControl.rotate(right_motor, 310, 30);
+            tslp_tsk(500 * 1000U);
+
+            // 赤色（右上）へ向かう
+            linetrace.resetDistance();
+            while (1) {
+                if (linetrace.getDistance() >= 12) {
+                    runControl.stop();
+                    tslp_tsk(500 * 1000U);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15);
+                tslp_tsk(30 * 1000U);
+            }
+            while (1) {
+                runControl.forward(10, 10);
+                if (colorSensor.getColorValue() == COLOR_RED) {
+                    runControl.stop();
+                    tslp_tsk(500 * 1000U);
+                    break;
+                }
+                tslp_tsk(30 * 1000U);
+            }
+
+            // 赤色（右上）で回転する
+            runControl.rotate(right_motor, 240, 30);
+            tslp_tsk(500 * 1000U);
+
+            // 赤色（左上）へ向かう
+            while (1) {
+                if (colorSensor.getColorValue() == COLOR_RED) {
+                    runControl.stop();
+                    runControl.forwardDistance(5, 15);
+                    tslp_tsk(300 * 1000U);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15);
+                tslp_tsk(30 * 1000U);
+            }
+
+            // 青色（右上）へ向かう
+            while (1) {
+                if (colorSensor.isBlue()) {
+                    runControl.stop();
+                    runControl.forwardDistance(5, 15);
+                    tslp_tsk(300 * 1000U);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15);
+                tslp_tsk(30 * 1000U);
+            }
+
+            // GOAL2
+            // 青色（左上）へ向かう
+            while (1) {
+                if (colorSensor.isBlue()) {
+                    runControl.stop();
+                    tslp_tsk(300 * 1000U);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15);
+                tslp_tsk(30 * 1000U);
+            }
         }
     private:
         // 属性
