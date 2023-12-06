@@ -300,7 +300,7 @@ class LineTraceClass {
 
         // 操作
         // ライントレースして走行する
-        void lineTraceAction(int brightness, double Kp, double Kd, int speed = 20, int thresholdValue = 20, bool edge = RIGHT_EDGE) {
+        void lineTraceAction(int brightness, double Kp, double Kd, int speed = 20, int thresholdValue = 17, bool edge = RIGHT_EDGE) {
             // PD制御の計算
             int error = thresholdValue - brightness;
             int derivative = error - prevError; // 偏差の変化量（微分）
@@ -310,7 +310,7 @@ class LineTraceClass {
             int power = static_cast<int>((Kp * error) + (Kd * derivative));
             power = min(max(power, -100), 100);
 
-            if (RIGHT_EDGE) {
+            if (edge) {
                 // 右エッジのとき
                 ev3_motor_set_power(left_motor, speed + power);
                 ev3_motor_set_power(right_motor, speed - power);
@@ -425,7 +425,7 @@ class NyoroSantaClass {
                     break;
                 }
                 // ライントレースして走行する
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 1.1, 0.8, 17);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 1.1, 0.8, 20, 17);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -439,7 +439,7 @@ class NyoroSantaClass {
                     break;
                 }
                 // ライントレースして走行する
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.8, 0.5, 15);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.8, 0.5);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -451,7 +451,7 @@ class NyoroSantaClass {
                     break;
                 }
                 // ライントレースして走行する
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.8, 0.5, 15);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1);
                 tslp_tsk(30 * 1000U);
             }
         }
@@ -463,13 +463,13 @@ class NyoroSantaClass {
                 if (runControl.getDistance() > 20) {
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10);
                 tslp_tsk(30 * 1000U);
             }
 
             // 近道するために回転し、直線走行する
             runControl.stop();
-            runControl.rotate(right_motor, 195, 100); // 回転
+            runControl.rotate(right_motor, 185, 100); // 回転
             tslp_tsk(30 * 1000U);
 
             // 近道（高速で）
@@ -482,22 +482,24 @@ class NyoroSantaClass {
             while(1) {
                 // 黒線を見つけるまで直線走行する
                 if (colorSensor.getColorValue() == COLOR_BLACK) {
+                    runControl.stop();
+                    tslp_tsk(300 * 1000U);
                     break;
                 }
                 tslp_tsk(30 * 1000U);
             }
 
             // 黒線上をライントレースするために回転し、再度ライントレースする
-            runControl.rotate(left_motor, 210, 100);
+            runControl.rotate(left_motor, 190, 30);
             linetrace.resetDistance();
             tslp_tsk(30 * 1000U);
 
             while(1) {
-                if (linetrace.getDistance() > 150) {
+                if (linetrace.getDistance() > 230) {
                     break;
                 }
                 // ライントレースして走行する
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.8, 0.5, 15);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -509,7 +511,7 @@ class NyoroSantaClass {
                     break;
                 }
                 // ライントレースして走行する
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.8, 0.5, 15);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1);
                 tslp_tsk(30 * 1000U);
             }
         }
@@ -540,7 +542,8 @@ class NyoroSantaClass {
             while (1) {
                 if (linetrace.getDistance() >= 40) {
                     runControl.stop();
-                    runControl.rotate(right_motor, 20, 30);
+                    linetrace.resetDistance();
+                    runControl.rotate(right_motor, 22, 30);
                     tslp_tsk(300 * 1000U);
                     runControl.forwardDistance(12, 10);
                     break;
@@ -563,7 +566,7 @@ class NyoroSantaClass {
                     runControl.stop();
                     tslp_tsk(300 * 1000U);
                     runControl.forwardDistance(3, 10);
-                    runControl.rotate(left_motor, 63, 30);
+                    runControl.rotate(left_motor, 70, 30);
                     tslp_tsk(300 * 1000U);
                     break;
                 }
@@ -572,12 +575,13 @@ class NyoroSantaClass {
             }
 
             // 灰色（上）へ向かう
-            linetrace.resetDistance();
+            
             while (1) {
                 if (linetrace.getDistance() >= 35) {
                     runControl.stop();
+                    linetrace.resetDistance();
                     runControl.forwardDistance(9, 10);
-                    runControl.rotate(left_motor, 65, 30);
+                    runControl.rotate(left_motor, 70, 30);
                     tslp_tsk(300 * 1000U);
                     break;
                 }
@@ -590,8 +594,8 @@ class NyoroSantaClass {
                 if (colorSensor.getColorValue() == COLOR_RED) {
                     runControl.stop();
                     tslp_tsk(300 * 1000U);
-                    runControl.forwardDistance(3);
-                    runControl.rotate(left_motor, 56, 30);
+                    runControl.forwardDistance(3, 10);
+                    runControl.rotate(left_motor, 70, 30);
                     tslp_tsk(300 * 1000U);
                     break;
                 }
@@ -600,13 +604,13 @@ class NyoroSantaClass {
             }
 
             // 灰色（右）へ向かう
-            linetrace.resetDistance();
             while (1) {
                 if (linetrace.getDistance() >= 35) {
                     runControl.stop();
+                    linetrace.resetDistance();
                     runControl.forwardDistance(9);
                     tslp_tsk(300 * 1000U);
-                    runControl.rotate(left_motor, 64, 30);
+                    runControl.rotate(left_motor, 70, 30);
                     tslp_tsk(300 * 1000U);
                     break;
                 }
@@ -620,7 +624,7 @@ class NyoroSantaClass {
                     runControl.stop();
                     tslp_tsk(300 * 1000U);
                     runControl.forwardDistance(3, 15);
-                    runControl.rotate(left_motor, 63, 30);
+                    runControl.rotate(left_motor, 70, 30);
                     tslp_tsk(300 * 1000U);
                     break;
                 }
@@ -629,10 +633,10 @@ class NyoroSantaClass {
             }
 
             // 灰色（下）へ向かう
-            linetrace.resetDistance();
             while (1) {
                 if (linetrace.getDistance() >= 35) {
                     runControl.stop();
+                    linetrace.resetDistance();
                     runControl.forwardDistance(9);
                     tslp_tsk(300 * 1000U);
                     runControl.rotate(left_motor, 64, 30);
@@ -658,9 +662,9 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     runControl.forwardDistance(15);
                     tslp_tsk(300 * 1000U);
-                    runControl.rotate(left_motor, 790, 40);
+                    runControl.rotate(left_motor, 780, 40);
                     tslp_tsk(300 * 1000U);
-                    runControl.rotate(right_motor, 320, 40);
+                    runControl.rotate(right_motor, 330, 40);
                     tslp_tsk(300 * 1000U);
                     break;
                 }
@@ -819,10 +823,10 @@ class NyoroSantaClass {
             tslp_tsk(500 * 1000U);
 
             // 赤色（右上）へ向かう
-            linetrace.resetDistance();
             while (1) {
-                if (linetrace.getDistance() >= 12) {
+                if (linetrace.getDistance() >= 10) {
                     runControl.stop();
+                    linetrace.resetDistance();
                     tslp_tsk(500 * 1000U);
                     break;
                 }
