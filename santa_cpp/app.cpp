@@ -56,15 +56,19 @@ const int LEFT_EDGE  = false; // 左エッジ
 const int RIGHT_EDGE = true;  // 右エッジ
 
 /**
-* Button クラス
-*/
+ * Button クラス
+ */
 class Button {
     public:
-        // コンストラクタ
+        /*
+         * コンストラクタ
+         */
         Button() {
         }
 
-        // 操作
+        /*
+         * 操作
+         */
         // 押下状態を取得する
         bool isPressed() {
             return ( ev3_touch_sensor_is_pressed( touch_sensor ) );
@@ -76,11 +80,15 @@ class Button {
  */
 class Backlight {
     public:
-        // コンストラクタ
+        /*
+         * コンストラクタ
+         */
         Backlight() {
         }
 
-        // 操作
+        /*
+         * 操作
+         */
         // 緑色に変更
         void setGreenLED() {
             ev3_led_set_color(green_light);
@@ -97,11 +105,15 @@ class Backlight {
  */
 class SonarSensor {
     public:
-        // コンストラクタ
+        /*
+         * コンストラクタ
+         */
         SonarSensor() {
         }
 
-        // 操作
+        /*
+         * 操作
+         */
         // 距離を取得する
         int sonardetection() {
             return ev3_ultrasonic_sensor_get_distance(sonar_sensor);
@@ -113,25 +125,31 @@ class SonarSensor {
  */
 class HatCheckerClass {
     public:
-        // コンストラクタ
+        /*
+         * コンストラクタ
+         */
         HatCheckerClass() {
         }
 
-        // 操作
+        /*
+         * 操作
+         */
         // サンタ帽子の有無を判定する
         bool hatChecker() {
             if (sonarSensor.sonardetection() > hatCheckDistance) {
-                // 帽子がないとき
-                return false;
+                return false; // 帽子がないとき
             } else {
-                // 帽子があるとき
-                return true;
+                return true; // 帽子があるとき
             }
         }
     private:
-        // 属性
+        /*
+         * 属性
+         */
         int hatCheckDistance = 5; // 被っているとみなす距離
-    // 関連
+    /*
+     * 関連
+     */
     SonarSensor sonarSensor;
 };
 
@@ -140,22 +158,26 @@ class HatCheckerClass {
  */
 class ModeSelectClass {
     public:
-        // コンストラクタ
+        /*
+         * コンストラクタ
+         */
         ModeSelectClass() {
         }
 
-        // 操作
+        /*
+         * 操作
+         */
         // 選択したモードを取得する
         int getMode() {
             // サンタ帽子の有無を判定する
             if (!hatChecker.hatChecker()) {
                 // 帽子がないとき
-                backlight.setGreenLED(); // 緑色に変更
-                return NORMAL_MODE; // 通常モード
+                backlight.setGreenLED();  // 緑色に変更
+                return NORMAL_MODE;       // 通常モード
             } else {
                 // 帽子があるとき
                 backlight.setOrangeLED(); // オレンジ色に変更
-                return RAPID_MODE; // 爆速モード
+                return RAPID_MODE;        // 爆速モード
             }
         }
 
@@ -163,7 +185,9 @@ class ModeSelectClass {
         bool isButtonPressed() {
             return button.isPressed();
         }
-    // 関連
+    /*
+     * 関連
+     */
     HatCheckerClass hatChecker;
     Backlight       backlight;
     Button          button;
@@ -174,11 +198,15 @@ class ModeSelectClass {
  */
 class ColorSensor {
     public:
-        // コンストラクタ
+        /*
+         * コンストラクタ
+         */
         ColorSensor() {
         }
 
-        // 操作
+        /*
+         * 操作
+         */
         // 輝度値を取得する
         int getBrightness() {
             return ev3_color_sensor_get_reflect(color_sensor);
@@ -210,7 +238,6 @@ class ColorSensor {
                 return false;
             }
         }
-
 };
 
 /**
@@ -218,11 +245,15 @@ class ColorSensor {
  */
 class GiftDrop {
     public:
-        // コンストラクタ
+        /*
+         * コンストラクタ
+         */
         GiftDrop() {
         }
 
-        // 操作
+        /*
+         * 操作
+         */
         // アームを2回上下運動させる
         void dropAction() {
             int degrees = 30;
@@ -242,11 +273,15 @@ class GiftDrop {
  */
 class RunControl {
     public:
-        // コンストラクタ
+        /*
+         * コンストラクタ
+         */
         RunControl() {
         }
 
-        // 操作
+        /*
+         * 操作
+         */
         // 停止する
         void stop() {
             ev3_motor_stop(right_motor, true);
@@ -293,12 +328,16 @@ class RunControl {
  */
 class LineTraceClass {
     public:
-        // コンストラクタ
+        /*
+         * コンストラクタ
+         */
         LineTraceClass() {
             prevError = 0; // 誤差の合計値
         }
 
-        // 操作
+        /*
+         * 操作
+         */
         // ライントレースして走行する
         void lineTraceAction(int brightness, double Kp, double Kd, int speed = 20, int thresholdValue = 17, bool edge = RIGHT_EDGE) {
             // PD制御の計算
@@ -332,7 +371,9 @@ class LineTraceClass {
             return static_cast<long long>(ev3_motor_get_counts(right_motor) * 31.4 / 360);
         }
     private:
-        // 属性
+        /*
+         * 属性
+         */
         int prevError; // 誤差の合計値
 };
 
@@ -341,7 +382,9 @@ class LineTraceClass {
  */
 class NyoroSantaClass {
     public:
-        // コンストラクタ
+        /*
+         * コンストラクタ
+         */
         NyoroSantaClass() {
             ev3_lcd_draw_string("Santa Class is created.", 0, 16);
 
@@ -359,7 +402,9 @@ class NyoroSantaClass {
             mode = NORMAL_MODE; // 初期状態は通常モード
         }
 
-        // 操作
+        /*
+         * 操作
+         */
         // 動作を実行する
         void start() {
             // 走行モード選択
@@ -373,19 +418,19 @@ class NyoroSantaClass {
             }
 
             // サンタ走行
-            // 緑色サークルから補助線の終端（灰色サークル）までの走行
+            // 緑色サークルから補助線の終端（灰色サークル）まで走行する
             goToGrayCircleAction();
 
-            // フリーエリア内の走行（時計回りで走行）
+            // フリーエリアの外周を時計回りで走行する
             moveClockwiseAction();
 
-            // フリーエリア内の走行（牛耕式で走行）
+            // フリーエリアの内側を牛耕式で走行する
             moveZigzagAction();
 
-            // プレゼント投下
+            // プレゼントを投下する
             giftDrop.dropAction();
 
-            // 停止
+            // 停止する
             while (1) {
                 runControl.stop();
                 tslp_tsk(30 * 1000U);
@@ -511,7 +556,7 @@ class NyoroSantaClass {
             }
         }
 
-        // 緑色サークルから補助線の終端（灰色サークル）までの走行
+        // 緑色サークルから補助線の終端（灰色サークル）まで走行する
         void goToGrayCircleAction() {
             // 緑色サークル上での90度左回転
             runControl.stop();
@@ -548,7 +593,7 @@ class NyoroSantaClass {
             }
         }
 
-        // 時計回りで走行
+        // フリーエリアの外周を時計回りで走行する
         void moveClockwiseAction() {
             double Kp = 0.6;         // 比例定数
             double Kd = 0.1;         // 微分定数
@@ -643,7 +688,7 @@ class NyoroSantaClass {
             }
         }
 
-        // 牛耕式で走行
+        // フリーエリアの内側を牛耕式で走行する
         void moveZigzagAction() {
             double Kp = 0.6;         // 比例定数
             double Kd = 0.1;         // 微分定数
@@ -879,9 +924,13 @@ class NyoroSantaClass {
             }
         }
     private:
-        // 属性
+        /*
+         * 属性
+         */
         int mode; // モード
-    // 関連
+    /*
+     * 関連
+     */
     ModeSelectClass modeSelect;
     LineTraceClass  linetrace;
     ColorSensor     colorSensor;
