@@ -460,7 +460,6 @@ class NyoroSantaClass {
         void rapidModeAction() {
             // 一定距離の直線走行を行う
             while(1) {
-                // 黒線を見つけるまで直線走行する
                 if (runControl.getDistance() > 20) {
                     break;
                 }
@@ -469,7 +468,6 @@ class NyoroSantaClass {
             }
 
             // 近道するために回転し、直線走行する
-            linetrace.resetDistance();
             runControl.stop();
             runControl.rotate(right_motor, 195, 100); // 回転
             tslp_tsk(30 * 1000U);
