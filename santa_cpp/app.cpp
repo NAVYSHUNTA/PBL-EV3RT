@@ -444,8 +444,6 @@ class NyoroSantaClass {
             }
 
             // ライントレース（色の識別を開始する）
-            runControl.stop();
-            tslp_tsk(30 * 1000U);
             while(1) {
                 if (colorSensor.getColorValue() == COLOR_GREEN) {
                     break;
@@ -469,11 +467,11 @@ class NyoroSantaClass {
 
             // 近道するために回転し、直線走行する
             runControl.stop();
-            runControl.rotate(right_motor, 185, 100); // 回転
+            runControl.rotate(right_motor, 190, 30); // 回転
             tslp_tsk(30 * 1000U);
 
             // 近道（高速で）
-            runControl.forwardDistance(250, 40);
+            runControl.forwardDistance(260, 40);
 
             // 近道（低速で）
             runControl.stop();
@@ -493,9 +491,8 @@ class NyoroSantaClass {
             runControl.rotate(left_motor, 190, 30);
             linetrace.resetDistance();
             tslp_tsk(30 * 1000U);
-
             while(1) {
-                if (linetrace.getDistance() > 210) {
+                if (linetrace.getDistance() > 225) {
                     break;
                 }
                 // ライントレースして走行する
@@ -504,8 +501,6 @@ class NyoroSantaClass {
             }
 
             // ライントレース（色の識別を開始する）
-            runControl.stop();
-            tslp_tsk(30 * 1000U);
             while(1) {
                 if (colorSensor.getColorValue() == COLOR_GREEN) {
                     break;
