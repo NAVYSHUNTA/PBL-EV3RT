@@ -495,7 +495,7 @@ class NyoroSantaClass {
             tslp_tsk(30 * 1000U);
 
             while(1) {
-                if (linetrace.getDistance() > 230) {
+                if (linetrace.getDistance() > 210) {
                     break;
                 }
                 // ライントレースして走行する
