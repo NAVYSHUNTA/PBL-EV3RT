@@ -225,7 +225,6 @@ class GiftDrop {
         // 操作
         // アームを2回上下運動させる
         void dropAction() {
-            /* TODO */
             int degrees = 30;
             uint32_t speed_abs = 4;
             ev3_motor_rotate(arm_motor, degrees, speed_abs, true);
@@ -301,9 +300,9 @@ class LineTraceClass {
 
         // 操作
         // ライントレースして走行する
-        void lineTraceAction(int brightness, double Kp, double Kd, int forwardSpeed = 20, int target = 20, bool edge = RIGHT_EDGE) {
+        void lineTraceAction(int brightness, double Kp, double Kd, int speed = 20, int thresholdValue = 20, bool edge = RIGHT_EDGE) {
             // PD制御の計算
-            int error = target - brightness;
+            int error = thresholdValue - brightness;
             int derivative = error - prevError; // 偏差の変化量（微分）
             prevError = error;
 
@@ -313,12 +312,12 @@ class LineTraceClass {
 
             if (RIGHT_EDGE) {
                 // 右エッジのとき
-                ev3_motor_set_power(left_motor, forwardSpeed + power);
-                ev3_motor_set_power(right_motor, forwardSpeed - power);
+                ev3_motor_set_power(left_motor, speed + power);
+                ev3_motor_set_power(right_motor, speed - power);
             } else {
                 // 左エッジのとき
-                ev3_motor_set_power(left_motor, forwardSpeed - power);
-                ev3_motor_set_power(right_motor, forwardSpeed + power);
+                ev3_motor_set_power(left_motor, speed - power);
+                ev3_motor_set_power(right_motor, speed + power);
             }
         }
 
@@ -555,6 +554,11 @@ class NyoroSantaClass {
 
         // 時計回りで走行
         void moveClockwiseAction() {
+            double Kp = 0.6;         // 比例定数
+            double Kd = 0.1;         // 微分定数
+            int speed = 10;          // 速度
+            int thresholdValue = 15; // 閾値
+
             // 青色（左上）へ向かう
             while (1) {
                 if (colorSensor.isBlue()) {
@@ -565,7 +569,7 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue, LEFT_EDGE);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -579,7 +583,7 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue, LEFT_EDGE);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -593,7 +597,7 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue, LEFT_EDGE);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -608,7 +612,7 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue, LEFT_EDGE);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -622,7 +626,7 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue, LEFT_EDGE);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -637,13 +641,18 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue, LEFT_EDGE);
                 tslp_tsk(30 * 1000U);
             }
         }
 
         // 牛耕式で走行
         void moveZigzagAction() {
+            double Kp = 0.6;         // 比例定数
+            double Kd = 0.1;         // 微分定数
+            int speed = 10;          // 速度
+            int thresholdValue = 15; // 閾値
+
             // 緑色（左下）で回転する
             while (1) {
                 if (colorSensor.getColorValue() == COLOR_GREEN) {
@@ -657,7 +666,7 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue, LEFT_EDGE);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -670,7 +679,7 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue, LEFT_EDGE);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -683,7 +692,7 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue, LEFT_EDGE);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -694,7 +703,7 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue, LEFT_EDGE);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -709,7 +718,7 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -725,7 +734,7 @@ class NyoroSantaClass {
                     runControl.forwardDistance(5, 15);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -737,7 +746,7 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -748,7 +757,7 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -763,7 +772,7 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue, LEFT_EDGE);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -779,7 +788,7 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue, LEFT_EDGE);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -792,7 +801,7 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue, LEFT_EDGE);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -803,7 +812,7 @@ class NyoroSantaClass {
                     tslp_tsk(500 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15, LEFT_EDGE);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue, LEFT_EDGE);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -819,7 +828,7 @@ class NyoroSantaClass {
                     tslp_tsk(500 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue);
                 tslp_tsk(30 * 1000U);
             }
             while (1) {
@@ -844,7 +853,7 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -856,7 +865,7 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -868,7 +877,7 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1, 10, 15);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue);
                 tslp_tsk(30 * 1000U);
             }
         }
