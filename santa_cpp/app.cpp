@@ -407,14 +407,14 @@ class NyoroSantaClass {
          */
         // 動作を実行する
         void start() {
-            // 走行モード選択
+            // 走行体の走行モードを選択する
             modeSelectAction();
 
             // 現在の走行モードの内容ごとに分岐する
             if (mode == NORMAL_MODE) {
-                normalModeAction(); // 通常モード
+                normalModeAction(); // 通常モードで走行する
             } else {
-                rapidModeAction();  // 爆速モード
+                rapidModeAction();  // 爆速モードで走行する
             }
 
             // サンタ走行
