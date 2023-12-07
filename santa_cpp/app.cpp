@@ -470,7 +470,7 @@ class NyoroSantaClass {
                     break;
                 }
                 // ライントレースして走行する
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 1.1, 0.8, 20, 17);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 1.1, 0.8);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -484,7 +484,7 @@ class NyoroSantaClass {
                     break;
                 }
                 // ライントレースして走行する
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.8, 0.5);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.7, 0.3, 20, 18);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -494,7 +494,7 @@ class NyoroSantaClass {
                     break;
                 }
                 // ライントレースして走行する
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.7, 0.3, 20, 18);
                 tslp_tsk(30 * 1000U);
             }
         }
@@ -512,11 +512,11 @@ class NyoroSantaClass {
 
             // 近道するために回転し、直線走行する
             runControl.stop();
-            runControl.rotate(right_motor, 190, 30); // 回転
+            runControl.rotate(right_motor, 175, 30); // 回転
             tslp_tsk(30 * 1000U);
 
             // 近道（高速で）
-            runControl.forwardDistance(260, 40);
+            runControl.forwardDistance(250, 40);
 
             // 近道（低速で）
             runControl.stop();
@@ -541,7 +541,7 @@ class NyoroSantaClass {
                     break;
                 }
                 // ライントレースして走行する
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.7, 0.3, 20, 18);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -551,7 +551,7 @@ class NyoroSantaClass {
                     break;
                 }
                 // ライントレースして走行する
-                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.6, 0.1);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), 0.7, 0.3, 20, 18);
                 tslp_tsk(30 * 1000U);
             }
         }
@@ -580,7 +580,7 @@ class NyoroSantaClass {
 
             // 補助線を通ってフリーエリア内へ侵入する
             while (1) {
-                if (linetrace.getDistance() >= 40) {
+                if (linetrace.getDistance() > 40) {
                     runControl.stop();
                     linetrace.resetDistance();
                     runControl.rotate(right_motor, 22, 30);
@@ -617,7 +617,7 @@ class NyoroSantaClass {
             // 灰色（上）へ向かう
             
             while (1) {
-                if (linetrace.getDistance() >= 35) {
+                if (linetrace.getDistance() > 35) {
                     runControl.stop();
                     linetrace.resetDistance();
                     runControl.forwardDistance(9, 10);
@@ -645,7 +645,7 @@ class NyoroSantaClass {
 
             // 灰色（右）へ向かう
             while (1) {
-                if (linetrace.getDistance() >= 35) {
+                if (linetrace.getDistance() > 35) {
                     runControl.stop();
                     linetrace.resetDistance();
                     runControl.forwardDistance(9);
@@ -674,7 +674,7 @@ class NyoroSantaClass {
 
             // 灰色（下）へ向かう
             while (1) {
-                if (linetrace.getDistance() >= 35) {
+                if (linetrace.getDistance() > 35) {
                     runControl.stop();
                     linetrace.resetDistance();
                     runControl.forwardDistance(9);
@@ -700,7 +700,7 @@ class NyoroSantaClass {
                 if (colorSensor.getColorValue() == COLOR_GREEN) {
                     runControl.stop();
                     tslp_tsk(300 * 1000U);
-                    runControl.forwardDistance(15);
+                    runControl.forwardDistance(20);
                     tslp_tsk(300 * 1000U);
                     runControl.rotate(left_motor, 780, 40);
                     tslp_tsk(300 * 1000U);
@@ -864,7 +864,7 @@ class NyoroSantaClass {
 
             // 赤色（右上）へ向かう
             while (1) {
-                if (linetrace.getDistance() >= 10) {
+                if (linetrace.getDistance() > 10) {
                     runControl.stop();
                     linetrace.resetDistance();
                     tslp_tsk(500 * 1000U);
