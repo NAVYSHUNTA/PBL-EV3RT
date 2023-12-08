@@ -499,7 +499,7 @@ class NyoroSantaClass {
 
         // 爆速モードで走行する
         void rapidModeAction() {
-            // 一定距離の直線走行を行う
+            // 一定距離、ライントレースして走行する
             while(1) {
                 if (runControl.getDistance() > 20) {
                     break;
