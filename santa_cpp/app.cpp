@@ -8,9 +8,7 @@
 
 #include "ev3api.h"
 #include "app.h"
-
 #include "libcpp-test.h"
-
 #include <algorithm>
 using namespace std;
 
@@ -58,12 +56,12 @@ const int RIGHT_EDGE = true;  // 右エッジ
 /**
  * Button クラス
  */
-class Button {
+class ButtonClass {
     public:
         /*
          * コンストラクタ
          */
-        Button() {
+        ButtonClass() {
         }
 
         /*
@@ -78,23 +76,23 @@ class Button {
 /**
  * Backlight クラス
  */
-class Backlight {
+class BacklightClass {
     public:
         /*
          * コンストラクタ
          */
-        Backlight() {
+        BacklightClass() {
         }
 
         /*
          * 操作
          */
-        // 緑色に変更
+        // 緑色に変更する
         void setGreenLED() {
             ev3_led_set_color(green_light);
         }
 
-        // オレンジ色に変更
+        // オレンジ色に変更する
         void setOrangeLED() {
             ev3_led_set_color(orange_light);
         }
@@ -103,12 +101,12 @@ class Backlight {
 /**
  * SonarSensor クラス
  */
-class SonarSensor {
+class SonarSensorClass {
     public:
         /*
          * コンストラクタ
          */
-        SonarSensor() {
+        SonarSensorClass() {
         }
 
         /*
@@ -150,7 +148,7 @@ class HatCheckerClass {
     /*
      * 関連
      */
-    SonarSensor sonarSensor;
+    SonarSensorClass sonarSensor;
 };
 
 /**
@@ -172,11 +170,11 @@ class ModeSelectClass {
             // サンタ帽子の有無を判定する
             if (!hatChecker.hatChecker()) {
                 // 帽子がないとき
-                backlight.setGreenLED();  // 緑色に変更
+                backlight.setGreenLED();  // 緑色に変更する
                 return NORMAL_MODE;       // 通常モード
             } else {
                 // 帽子があるとき
-                backlight.setOrangeLED(); // オレンジ色に変更
+                backlight.setOrangeLED(); // オレンジ色に変更する
                 return RAPID_MODE;        // 爆速モード
             }
         }
@@ -188,20 +186,20 @@ class ModeSelectClass {
     /*
      * 関連
      */
+    ButtonClass     button;
+    BacklightClass  backlight;
     HatCheckerClass hatChecker;
-    Backlight       backlight;
-    Button          button;
 };
 
 /**
  * ColorSensor クラス
  */
-class ColorSensor {
+class ColorSensorClass {
     public:
         /*
          * コンストラクタ
          */
-        ColorSensor() {
+        ColorSensorClass() {
         }
 
         /*
@@ -243,12 +241,12 @@ class ColorSensor {
 /**
  * GiftDrop クラス
  */
-class GiftDrop {
+class GiftDropClass {
     public:
         /*
          * コンストラクタ
          */
-        GiftDrop() {
+        GiftDropClass() {
         }
 
         /*
@@ -269,14 +267,14 @@ class GiftDrop {
 };
 
 /**
- * RunControl
+ * RunControl クラス
  */
-class RunControl {
+class RunControlClass {
     public:
         /*
          * コンストラクタ
          */
-        RunControl() {
+        RunControlClass() {
         }
 
         /*
@@ -931,12 +929,11 @@ class NyoroSantaClass {
     /*
      * 関連
      */
-    ModeSelectClass modeSelect;
-    LineTraceClass  linetrace;
-    ColorSensor     colorSensor;
-    Button          button;
-    RunControl      runControl;
-    GiftDrop        giftDrop;
+    ModeSelectClass  modeSelect;
+    RunControlClass  runControl;
+    LineTraceClass   linetrace;
+    ColorSensorClass colorSensor;
+    GiftDropClass    giftDrop;
 };
 
 
