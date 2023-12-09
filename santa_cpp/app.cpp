@@ -684,6 +684,21 @@ class NyoroSantaClass {
                 linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue, LEFT_EDGE);
                 tslp_tsk(30 * 1000U);
             }
+
+            // 緑色（左下）へ向かう
+            while (1) {
+                if (colorSensor.getColorValue() == COLOR_GREEN) {
+                    runControl.stop();
+                    tslp_tsk(300 * 1000U);
+                    runControl.forwardDistance(20);
+                    tslp_tsk(300 * 1000U);
+                    runControl.rotate(left_motor, 780, 40);
+                    tslp_tsk(300 * 1000U);
+                    break;
+                }
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue, LEFT_EDGE);
+                tslp_tsk(30 * 1000U);
+            }
         }
 
         // フリーエリアの内側を牛耕式で走行する
@@ -694,21 +709,8 @@ class NyoroSantaClass {
             int thresholdValue = 15; // 閾値
 
             // 緑色（左下）で回転する
-            while (1) {
-                if (colorSensor.getColorValue() == COLOR_GREEN) {
-                    runControl.stop();
-                    tslp_tsk(300 * 1000U);
-                    runControl.forwardDistance(20);
-                    tslp_tsk(300 * 1000U);
-                    runControl.rotate(left_motor, 780, 40);
-                    tslp_tsk(300 * 1000U);
-                    runControl.rotate(right_motor, 330, 40);
-                    tslp_tsk(300 * 1000U);
-                    break;
-                }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue, LEFT_EDGE);
-                tslp_tsk(30 * 1000U);
-            }
+            runControl.rotate(right_motor, 330, 40);
+            tslp_tsk(300 * 1000U);
 
             // 緑色（右下）へ向かう
             while (1){
