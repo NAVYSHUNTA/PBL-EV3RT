@@ -510,7 +510,7 @@ class NyoroSantaClass {
 
             // 近道するために回転し、直線走行する
             runControl.stop();
-            runControl.rotate(right_motor, 175, 30); // 回転
+            runControl.rotate(right_motor, 180, 30); // 回転
             tslp_tsk(30 * 1000U);
 
             // 近道（高速で）
@@ -709,7 +709,7 @@ class NyoroSantaClass {
             int thresholdValue = 15; // 閾値
 
             // 緑色（左下）で回転する
-            runControl.rotate(right_motor, 330, 40);
+            runControl.rotate(right_motor, 320, 40);
             tslp_tsk(300 * 1000U);
 
             // 緑色（右下）へ向かう
@@ -721,7 +721,7 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp-0.1, Kd, speed-3, thresholdValue-5, LEFT_EDGE);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp - 0.1, Kd, speed - 3, thresholdValue - 5, LEFT_EDGE);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -765,7 +765,7 @@ class NyoroSantaClass {
             }
 
             // 黄色（右上）で回転する
-            runControl.rotate(right_motor, 300, 30);
+            runControl.rotate(right_motor, 290, 30);
             tslp_tsk(500 * 1000U);
 
             // 黄色（左上）へ向かう
@@ -919,7 +919,7 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp - 0.1, Kd, speed - 3, thresholdValue - 5);
                 tslp_tsk(30 * 1000U);
             }
         }
