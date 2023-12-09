@@ -618,7 +618,7 @@ class NyoroSantaClass {
                 if (linetrace.getDistance() > 35) {
                     runControl.stop();
                     linetrace.resetDistance();
-                    runControl.forwardDistance(9, 10);
+                    runControl.forwardDistance(8, 10);
                     runControl.rotate(left_motor, 70, 30);
                     tslp_tsk(300 * 1000U);
                     break;
@@ -646,10 +646,10 @@ class NyoroSantaClass {
                 if (linetrace.getDistance() > 35) {
                     runControl.stop();
                     linetrace.resetDistance();
-                    runControl.forwardDistance(9);
+                    runControl.forwardDistance(8);
                     tslp_tsk(300 * 1000U);
-                    runControl.rotate(left_motor, 70, 30);
-                    tslp_tsk(300 * 1000U);
+                    runControl.rotate(left_motor, 75, 30);
+                    tslp_tsk(500 * 1000U);
                     break;
                 }
                 linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue, LEFT_EDGE);
@@ -675,7 +675,7 @@ class NyoroSantaClass {
                 if (linetrace.getDistance() > 35) {
                     runControl.stop();
                     linetrace.resetDistance();
-                    runControl.forwardDistance(9);
+                    runControl.forwardDistance(8);
                     tslp_tsk(300 * 1000U);
                     runControl.rotate(left_motor, 64, 30);
                     tslp_tsk(300 * 1000U);
@@ -690,9 +690,9 @@ class NyoroSantaClass {
                 if (colorSensor.getColorValue() == COLOR_GREEN) {
                     runControl.stop();
                     tslp_tsk(300 * 1000U);
-                    runControl.forwardDistance(20);
+                    runControl.forwardDistance(22);
                     tslp_tsk(300 * 1000U);
-                    runControl.rotate(left_motor, 780, 40);
+                    runControl.rotate(left_motor, 790, 40);
                     tslp_tsk(300 * 1000U);
                     break;
                 }
@@ -721,7 +721,7 @@ class NyoroSantaClass {
                     tslp_tsk(300 * 1000U);
                     break;
                 }
-                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp, Kd, speed, thresholdValue, LEFT_EDGE);
+                linetrace.lineTraceAction(colorSensor.getBrightness(), Kp-0.1, Kd, speed-3, thresholdValue-5, LEFT_EDGE);
                 tslp_tsk(30 * 1000U);
             }
 
@@ -884,7 +884,7 @@ class NyoroSantaClass {
             }
 
             // 赤色（右上）で回転する
-            runControl.rotate(right_motor, 240, 30);
+            runControl.rotate(right_motor, 230, 30);
             tslp_tsk(500 * 1000U);
 
             // 赤色（左上）へ向かう
