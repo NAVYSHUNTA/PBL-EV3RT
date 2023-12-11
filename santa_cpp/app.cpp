@@ -709,7 +709,7 @@ class NyoroSantaClass {
             int thresholdValue = 15; // 閾値
 
             // 緑色（左下）で回転する
-            runControl.rotate(right_motor, 320, 40);
+            runControl.rotate(right_motor, 330, 40);
             tslp_tsk(300 * 1000U);
 
             // 緑色（右下）へ向かう
@@ -819,7 +819,7 @@ class NyoroSantaClass {
             }
 
             // 青色（左下）で回転する
-            runControl.rotate(left_motor, 270, 30);
+            runControl.rotate(left_motor, 260, 30);
             tslp_tsk(500 * 1000U);
 
             // 青色（右下）へ向かう
